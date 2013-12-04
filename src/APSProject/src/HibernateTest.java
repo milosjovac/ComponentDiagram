@@ -10,8 +10,10 @@ public class HibernateTest {
 	 * @param args
 	 */
 	public static void main(String[] args) {
+		
+		
 		Komponenta kom = new Komponenta();
-		kom.setIdKomponente(1);
+		kom.setIdKomponente(3);
 		kom.setIme("Proba");
 		kom.setHeight(20);
 		kom.setWidth(200);
