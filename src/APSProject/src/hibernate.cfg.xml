@@ -25,7 +25,9 @@
         <!-- Echo all executed SQL to stdout -->
         <property name="show_sql">true</property>
 
-        <!-- Drop and re-create the database schema on startup -->
+        <!-- Drop and re-create the database schema on startup 
+        change value to update once we do not want it to delete old table
+        -->
         <property name="hbm2ddl.auto">create</property>
 
         <!-- Name of the annotated entity class -->        

@@ -1,19 +1,28 @@
 package com.aps.dmo;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 
-@Entity
+@Entity(name = "COMPONENT")
 public class Komponenta {
 	@Id
+	@Column (name = "COMPONENT_ID")
 	private int idKomponente;
 
+	@Column (name = "POSITION_X")
 	private int posX;
+	@Column (name = "POSITION_Y")
 	private int posY;
+	@Column (name = "HEIGHT")
 	private int height;
+	@Column (name = "WIDTH")
 	private int width;
+	@Column (name = "NAME")
 	private String ime;
+	@Column (name = "STEREOTYPE")
 	private boolean stereotip;
+	@Column (name = "DECORATION")
 	private boolean dekoracija;
 
 	public int getIdKomponente() {
