@@ -13,7 +13,6 @@ public class HibernateTest {
 		
 		
 		Komponenta kom = new Komponenta();
-		kom.setIdKomponente(3);
 		kom.setIme("Proba");
 		kom.setHeight(20);
 		kom.setWidth(200);
@@ -22,13 +21,25 @@ public class HibernateTest {
 		kom.setStereotip(true);
 		kom.setDekoracija(true);
 
+		
+		// WRITING OBJECT TO DATABASE
 		SessionFactory sessionFactory = new Configuration().configure().buildSessionFactory();
 		Session session = sessionFactory.openSession();
 		session.beginTransaction();
 		
-		session.save(kom);
-		
+		session.save(kom);		
 		session.getTransaction().commit();
+		session.close();
+		
+		// RETRIEVING DATABASE INPUT AS OBJECT
+		kom = null;
+		
+		session = sessionFactory.openSession();
+		session.beginTransaction();
+		kom = (Komponenta) session.get(Komponenta.class, 3);
+		System.out.println("Ime komponente je: " + kom.getIme());
+		session.close();
+		
 		
 	}
 
