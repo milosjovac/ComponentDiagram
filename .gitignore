@@ -17,6 +17,7 @@
 
 # Java class files
 *.class
+.classpath
 
 # generated files
 source/*/bin/
