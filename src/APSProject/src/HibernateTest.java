@@ -62,6 +62,7 @@ public class HibernateTest {
 		session.beginTransaction();
 
 		session.save(d);
+		session.save(d);
 		session.save(kom1);
 		session.save(kom);
 		session.save(i1);
