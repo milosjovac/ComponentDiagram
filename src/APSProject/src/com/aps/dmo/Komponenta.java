@@ -1,39 +1,68 @@
 package com.aps.dmo;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
-@Entity 
-@Table (name = "COMPONENT")
+@Entity
+@Table(name = "COMPONENT")
 public class Komponenta {
 	@Id
 	@GeneratedValue
-	@Column (name = "COMPONENT_ID")
+	@Column(name = "COMPONENT_ID")
 	private int idKomponente;
 
-	@Column (name = "POSITION_X")
+	@Column(name = "POSITION_X")
 	private int posX;
-	
-	@Column (name = "POSITION_Y")
+
+	@Column(name = "POSITION_Y")
 	private int posY;
-	
-	@Column (name = "HEIGHT")
+
+	@Column(name = "HEIGHT")
 	private int height;
-	
-	@Column (name = "WIDTH")
+
+	@Column(name = "WIDTH")
 	private int width;
-	
-	@Column (name = "NAME")
+
+	@Column(name = "NAME")
 	private String ime;
-	
-	@Column (name = "STEREOTYPE")
+
+	@Column(name = "STEREOTYPE")
 	private boolean stereotip;
-	
-	@Column (name = "DECORATION")
+
+	@Column(name = "DECORATION")
 	private boolean dekoracija;
+
+	@ManyToOne 
+	@JoinColumn (name = "DIAGRAM_ID")
+	private Dijagram dijagram;
+	
+	@OneToMany (mappedBy="komponenta")
+	private Collection<Interfejs> interfejsi = new ArrayList<Interfejs>();
+
+	public Collection<Interfejs> getInterfejsi() {
+		return interfejsi;
+	}
+
+	public void setInterfejsi(Collection<Interfejs> interfejsi) {
+		this.interfejsi = interfejsi;
+	}
+
+	public Dijagram getDijagram() {
+		return dijagram;
+	}
+
+	public void setDijagram(Dijagram dijagram) {
+		this.dijagram = dijagram;
+	}
 
 	public int getIdKomponente() {
 		return idKomponente;

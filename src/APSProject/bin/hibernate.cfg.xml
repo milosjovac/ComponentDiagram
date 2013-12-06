@@ -32,6 +32,8 @@
 
         <!-- Name of the annotated entity class -->        
         <mapping class="com.aps.dmo.Komponenta"/>
+        <mapping class="com.aps.dmo.Dijagram"/>
+        <mapping class="com.aps.dmo.Interfejs"/>
 
     </session-factory>
 
