@@ -11,10 +11,22 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.standard.DecoratorFigure;
+
+import com.aps.figures.ComponentFigure;
+import com.aps.figures.InterfaceFigure;
+import com.aps.figures.StereotipDecorator;
 
 @Entity
 @Table(name = "COMPONENT")
-public class Komponenta {
+public class Komponenta implements java.io.Serializable {
+
+	@Transient
+	private static final long serialVersionUID = 3773457305815319422L;
+
 	@Id
 	@GeneratedValue
 	@Column(name = "COMPONENT_ID")
@@ -41,12 +53,43 @@ public class Komponenta {
 	@Column(name = "DECORATION")
 	private boolean dekoracija;
 
-	@ManyToOne 
-	@JoinColumn (name = "DIAGRAM_ID")
+	@ManyToOne
+	@JoinColumn(name = "DIAGRAM_ID")
 	private Dijagram dijagram;
-	
-	@OneToMany (mappedBy="komponenta")
+
+	@OneToMany(mappedBy = "komponenta")
 	private Collection<Interfejs> interfejsi = new ArrayList<Interfejs>();
+
+	public Komponenta(Figure fig, Dijagram dijagram, ArrayList<Interfejs> modelInterfejsi) {
+		this.posX = fig.displayBox().x;
+		this.posY = fig.displayBox().y;
+		this.width = fig.displayBox().width;
+		this.height = fig.displayBox().height;
+		this.dijagram = dijagram;
+
+		if (fig instanceof DecoratorFigure) {
+			while (fig instanceof DecoratorFigure) {
+				if (fig instanceof StereotipDecorator)
+					this.stereotip = true;
+				else
+					this.dekoracija = true;
+
+				fig = ((DecoratorFigure) fig).peelDecoration();
+			}
+		}
+
+		this.ime = ((ComponentFigure) fig).getName().getText().toString();
+
+		for (InterfaceFigure ifig : ((ComponentFigure) fig).interfejsi) {
+			Interfejs newInterface = new Interfejs();
+			this.interfejsi.add(newInterface);
+			modelInterfejsi.add(newInterface);
+		}
+	}
+
+	public Komponenta() {
+
+	}
 
 	public Collection<Interfejs> getInterfejsi() {
 		return interfejsi;

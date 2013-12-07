@@ -11,9 +11,16 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.Transient;
+
+import com.aps.figures.InterfaceEmptyFigure;
+import com.aps.figures.InterfaceFigure;
 
 @Entity(name = "INTERFACE")
-public class Interfejs {
+public class Interfejs implements java.io.Serializable {
+
+	@Transient
+	private static final long serialVersionUID = 3773858305815319422L;
 
 	@Id
 	@GeneratedValue
@@ -27,6 +34,9 @@ public class Interfejs {
 	@Column(name = "TYPE")
 	private boolean tip;
 
+	@Column(name = "Name")
+	private String name;
+
 	@ManyToOne
 	@JoinColumn(name = "COMPONENT_ID")
 	private Komponenta komponenta;
@@ -34,6 +44,9 @@ public class Interfejs {
 	@OneToMany
 	@JoinTable(name = "INTERFACE_DEPENDECY", joinColumns = @JoinColumn(name = "INT_FROM"), inverseJoinColumns = @JoinColumn(name = "INT_TO"))
 	private Collection<Interfejs> interfejsi = new ArrayList<Interfejs>();
+
+	public Interfejs() {
+	}
 
 	public int getId() {
 		return id;
@@ -69,6 +82,14 @@ public class Interfejs {
 
 	public Komponenta getKomponenta() {
 		return komponenta;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public void setKomponenta(Komponenta komponenta) {

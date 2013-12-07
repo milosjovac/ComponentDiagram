@@ -35,7 +35,7 @@ public  class DrawApplication
     private Tool                fTool;
     private Iconkit             fIconkit;
 
-    private TextField           fStatusLine;
+    private TextField           fStatusLine; 
     private StandardDrawingView fView;
     private ToolButton          fDefaultToolButton;
     private ToolButton          fSelectedToolButton;

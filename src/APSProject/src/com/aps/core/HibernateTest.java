@@ -1,3 +1,4 @@
+package com.aps.core;
 import java.util.Date;
 
 import org.hibernate.Session;
@@ -14,7 +15,7 @@ public class HibernateTest {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-
+/*
 		Interfejs i1 = new Interfejs();
 		i1.setPosX(100);
 		i1.setPosY(100);

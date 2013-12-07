@@ -1,3 +1,5 @@
+package com.aps.core;
+
 import java.awt.EventQueue;
 
 import javax.swing.JFrame;
@@ -18,13 +20,14 @@ import javax.swing.JComboBox;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
 import org.hibernate.SessionFactory;
+import org.omg.CORBA.OMGVMCID;
+
 import com.aps.dmo.Dijagram;
 
 public class MainWindow {
-	private static SessionFactory sessionFactory;
-	private static org.hibernate.service.ServiceRegistry serviceRegistry;
 	private JFrame frame;
 	public ArrayList<Dijagram> cashedDiagrams = new ArrayList<Dijagram>();
+	public static ArrayList<Dijagram> dijagramiAktivni;
 
 	int clientCounter = 0;
 	DefaultTableModel model = new DefaultTableModel();
@@ -48,6 +51,7 @@ public class MainWindow {
 				}
 			}
 		});
+
 	}
 
 	/**
@@ -72,10 +76,15 @@ public class MainWindow {
 		frame.setBounds(100, 100, 474, 333);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
+		frame.setResizable(false);
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
 		JLabel lblNewLabel = new JLabel("Select diagram");
 		lblNewLabel.setBounds(12, 13, 132, 16);
 		frame.getContentPane().add(lblNewLabel);
+
+		if (dijagramiAktivni == null)
+			dijagramiAktivni = new ArrayList<>();
 
 		final JComboBox<String> comboBox = new JComboBox<String>();
 
@@ -110,23 +119,25 @@ public class MainWindow {
 					dijagram = new Dijagram();
 					dijagram.setDate(new Date());
 					dijagram.setIme(name);
-					ORMManager.getManager().saveDiagram(dijagram);
 					cashedDiagrams.add(dijagram);
 
 					// update comboBox
 					comboBox.addItem(dijagram.getIme());
 					comboBox.updateUI();
 
-					client = new ClientApp(name, MainWindow.this, dijagram, "C" + clientCounter++);
+					client = new ClientApp(MainWindow.this, name, MainWindow.this, dijagram, "C"
+							+ clientCounter++);
 					client.open();
 
 					// DIAGRAM IS LOADED FROM DATABASE
 				} else {
 					dijagram = cashedDiagrams.get(comboBox.getSelectedIndex() - 1);
-					client = new ClientApp(dijagram.getIme(), MainWindow.this, dijagram, "C"
+					client = new ClientApp(MainWindow.this, dijagram.getIme(), MainWindow.this, dijagram, "C"
 							+ clientCounter++);
 					client.open();
 				}
+
+				dijagramiAktivni.add(dijagram);
 
 				if (statistika.get(dijagram) == null) {
 					Queue q = new LinkedList<ClientApp>();
@@ -136,7 +147,7 @@ public class MainWindow {
 					statistika.get(dijagram).add(client);
 				}
 				if (statistika.get(dijagram).size() == 1)
-					client.wPermission = true;
+					client.setwPermission(true);
 
 				refreshTableStat();
 
@@ -160,10 +171,21 @@ public class MainWindow {
 			for (ClientApp cap : statistika.get(d))
 				queue += cap.clientName + " <- ";
 
-			queue = queue.substring(0, queue.length() - 4);
+			if (queue.length() > 0)
+				queue = queue.substring(0, queue.length() - 4);
 			model.addRow(new Object[] { d.getIme(), "[ " + queue + " ]" });
 		}
 
 		table.updateUI();
+	}
+
+	public void clientDisposed(Dijagram d, ClientApp client) {
+
+		statistika.get(d).remove(client);
+		if (statistika.get(d).size() > 0)
+			statistika.get(d).peek().setwPermission(true);
+		else
+			statistika.remove(d);
+		refreshTableStat();
 	}
 }

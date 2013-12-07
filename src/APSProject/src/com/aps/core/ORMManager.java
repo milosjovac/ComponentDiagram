@@ -1,3 +1,5 @@
+package com.aps.core;
+
 import java.util.List;
 
 import org.hibernate.Query;
@@ -15,6 +17,7 @@ public class ORMManager {
 	private SessionFactory sessionFactory;
 	private org.hibernate.service.ServiceRegistry serviceRegistry;
 	private static ORMManager manager = null;
+	Session session;
 
 	private ORMManager() {
 		Configuration configuration = new Configuration();
@@ -22,6 +25,7 @@ public class ORMManager {
 		serviceRegistry = new ServiceRegistryBuilder().applySettings(configuration.getProperties())
 				.buildServiceRegistry();
 		sessionFactory = configuration.buildSessionFactory(serviceRegistry);
+		createSession();
 	}
 
 	public static ORMManager getManager() {
@@ -43,20 +47,17 @@ public class ORMManager {
 	}
 
 	private List<?> executeQuery(String query) {
-		Session session = sessionFactory.openSession();
+
 		session.beginTransaction();
 
 		Query q = session.createQuery(query);
 		List<?> resultList = q.list();
 
 		session.getTransaction().commit();
-		session.close();
-
 		return resultList;
 	}
 
 	public void saveDiagram(Dijagram dijagram) {
-		Session session = sessionFactory.openSession();
 		session.beginTransaction();
 
 		session.save(dijagram);
@@ -64,14 +65,19 @@ public class ORMManager {
 		for (Komponenta komponenta : dijagram.getKomponente()) {
 			session.save(komponenta);
 			for (Interfejs interfesjs : komponenta.getInterfejsi()) {
-				session.save(interfesjs);
-				for (Interfejs interfejs2 : interfesjs.getInterfejsi()) {
-					session.save(interfejs2);
-				}
+				if (interfesjs.getInterfejsi().size() == 0 || interfesjs.isTip())
+					session.save(interfesjs);
 			}
 		}
 
 		session.getTransaction().commit();
+	}
+
+	public void createSession() {
+		session = sessionFactory.openSession();
+	}
+
+	public void closeSession() {
 		session.close();
 	}
 }
