@@ -1,9 +1,6 @@
 package com.aps.figures;
 
-import java.util.ArrayList;
 import java.util.Vector;
-
-import com.aps.dmo.Interfejs;
 
 import CH.ifa.draw.figures.ArrowTip;
 import CH.ifa.draw.figures.LineConnection;
@@ -78,9 +75,11 @@ public class InterfaceInterfaceConnection extends LineConnection {
 
 	public boolean canConnect(Figure start, Figure end) {
 		if ((start instanceof InterfaceEmptyFigure) && (end instanceof InterfaceFullFigure)) {
-			if (!((InterfaceFigure) start).parentFigure.equals(((InterfaceFigure) end).parentFigure))
-				if (!((InterfaceFigure) start).connectedInterfaces.contains(end))
-					return true;
+			if (!((InterfaceFigure) start).connectedInterfaces.contains(end))
+				if (((InterfaceFigure) start).parentFigure != null
+						&& ((InterfaceFigure) end).parentFigure != null)
+					if (!((InterfaceFigure) start).parentFigure.equals(((InterfaceFigure) end).parentFigure))
+						return true;
 		}
 		return false;
 	}

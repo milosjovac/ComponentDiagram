@@ -7,11 +7,13 @@ package com.aps.figures;
 import CH.ifa.draw.framework.DrawingView;
 import CH.ifa.draw.framework.Figure;
 import CH.ifa.draw.standard.ActionTool;
+import CH.ifa.draw.standard.DecoratorFigure;
+
 import java.awt.Color;
 
 /**
  * 
- * @author Mima
+ * @author Mima, brao Mimo care!
  */
 public class StereotipTool extends ActionTool {
 
@@ -21,36 +23,34 @@ public class StereotipTool extends ActionTool {
 
 	@Override
 	public void action(Figure figure) {
-
-		if (figure instanceof StereotipDecorator) {
-			Figure temp = ((StereotipDecorator) figure).peelDecoration();
-			((ComponentFigure) figure).stereotip = false;
-			drawing().replace(figure, temp);
-
-			if (temp instanceof ComponentFigure)
-				((ComponentFigure) temp).errorNotation = true;
-		}
-
-		else if (figure instanceof ComponentFigure) {
-			((ComponentFigure) figure).errorNotation = false;
-			drawing().replace(figure, new StereotipDecorator(figure, Color.blue));
-
-		}
-
-		else if (figure instanceof SymbolDecorator) {
-
-			Figure temp = ((SymbolDecorator) figure).peelDecoration();
-
-			if (temp instanceof ComponentFigure) {
-				drawing().replace(figure, new StereotipDecorator(figure, Color.blue));
-
-			} else if (temp instanceof StereotipDecorator) {
-				temp = ((StereotipDecorator) temp).peelDecoration();
-				((ComponentFigure) figure).stereotip = false;
-				drawing().replace(figure, new SymbolDecorator(temp, Color.blue));
+		if (figure instanceof DecoratorFigure) {
+			boolean flagStereo = false;
+			boolean flagSymbol = false;
+			while (figure instanceof DecoratorFigure) {
+				if (figure instanceof SymbolDecorator)
+					flagSymbol = true;
+				else if (figure instanceof StereotipDecorator)
+					flagStereo = true;
+				drawing().replace(figure, ((DecoratorFigure) figure).peelDecoration());
+				figure = ((DecoratorFigure) figure).peelDecoration();
 			}
 
-		}
+			((ComponentFigure) figure).stereotip = !flagStereo;
+			((ComponentFigure) figure).dekoracija = flagSymbol;
+			((ComponentFigure) figure).errorNotation = !(flagSymbol || !flagStereo);
 
+			if (flagSymbol) {
+				Figure newFigure = new SymbolDecorator(figure, Color.blue);
+				drawing().replace(figure, newFigure);
+				figure = newFigure;
+			}
+			if (!flagStereo)
+				drawing().replace(figure, new StereotipDecorator(figure, Color.blue));
+
+		} else {
+			((ComponentFigure) figure).errorNotation = false;
+			((ComponentFigure) figure).dekoracija = true;
+			drawing().replace(figure, new StereotipDecorator(figure, Color.blue));
+		}
 	}
 }

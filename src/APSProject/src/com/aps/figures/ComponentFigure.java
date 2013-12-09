@@ -76,9 +76,8 @@ public class ComponentFigure extends GroupFigure {
 	public ComponentFigure(String dijagramName) {
 		super();
 
-		imeDijagrama = dijagramName;
 		fDisplayBox = new Rectangle(0, 0, 0, 0);
-
+		imeDijagrama = dijagramName;
 		Font fb = new Font("Helvetica", Font.BOLD, 17);
 
 		name = new TextFigure();
@@ -86,8 +85,12 @@ public class ComponentFigure extends GroupFigure {
 		name.setText("Name");
 		name.setAttribute("TextColor", Color.black);
 
-		super.add(name);
+		add(name);
 
+	}
+
+	public ComponentFigure() {
+		// TODO Auto-generated constructor stub
 	}
 
 	@Override
@@ -230,15 +233,30 @@ public class ComponentFigure extends GroupFigure {
 	public static Figure createComponent(Komponenta k) {
 
 		Figure rezultat = null;
-		/*
-		 * ComponentFigure rez = new ComponentFigure(); rez.displayBox(new Point(k.getX(), k.getY()), new
-		 * Point(k.getX()+k.getWidth(),k.getY()+k.getHeight())); TextFigure tf = new TextFigure();
-		 * tf.setText(k.getIme()); rez.setName(tf); rezultat = rez;
-		 * 
-		 * if(k.getDekoracija()==1) rezultat = new SymbolDecorator (rezultat, Color.blue);
-		 * 
-		 * if(k.getStereotip() == 1) rezultat = new StereotipDecorator (rezultat, Color.blue);
-		 */
+
+		ComponentFigure rez = new ComponentFigure();
+		rez.fDisplayBox = new Rectangle(0, 0, 0, 0);
+		rez.dbKomponenta = k;
+		rez.imeDijagrama = k.getDijagram().getIme();
+
+		TextFigure name = new TextFigure();
+		Font fb = new Font("Helvetica", Font.BOLD, 17);
+		name.setFont(fb);
+		name.setText(k.getIme());
+		name.setAttribute("TextColor", Color.black);
+		rez.add(name);
+		rez.setName(name);
+
+		rezultat = rez;
+
+		if (k.isDekoracija())
+			rezultat = new SymbolDecorator(rezultat, Color.blue);
+
+		if (k.isStereotip())
+			rezultat = new StereotipDecorator(rezultat, Color.blue);
+
+		rez.displayBox(new Point(k.getPosX(), k.getPosY()), new Point(k.getPosX() + k.getWidth(), k.getPosY()
+				+ k.getHeight()));
 
 		return rezultat;
 	}

@@ -65,8 +65,7 @@ public class ORMManager {
 		for (Komponenta komponenta : dijagram.getKomponente()) {
 			session.save(komponenta);
 			for (Interfejs interfesjs : komponenta.getInterfejsi()) {
-				if (interfesjs.getInterfejsi().size() == 0 || interfesjs.isTip())
-					session.save(interfesjs);
+				session.save(interfesjs);
 			}
 		}
 
@@ -79,5 +78,15 @@ public class ORMManager {
 
 	public void closeSession() {
 		session.close();
+	}
+
+	public void loadDiagramTree(Dijagram dijagram) {
+		session.beginTransaction();
+		for (Komponenta k : dijagram.getKomponente()) {
+			k.getInterfejsi();
+			for (Interfejs inter : k.getInterfejsi())
+				inter.getInterfejsi();
+		}
+		session.getTransaction().commit();
 	}
 }

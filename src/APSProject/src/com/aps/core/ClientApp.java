@@ -9,23 +9,28 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.ArrayList;
-
 import javax.swing.JOptionPane;
 
 import CH.ifa.draw.application.DrawApplication;
 import CH.ifa.draw.figures.TextFigure;
 import CH.ifa.draw.figures.TextTool;
+import CH.ifa.draw.framework.Drawing;
+import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.framework.FigureEnumeration;
 import CH.ifa.draw.framework.Tool;
 import CH.ifa.draw.standard.ActionTool;
 import CH.ifa.draw.standard.ConnectionTool;
 import CH.ifa.draw.standard.CreationTool;
+import CH.ifa.draw.standard.DecoratorFigure;
+import CH.ifa.draw.standard.StandardDrawing;
 import CH.ifa.draw.standard.ToolButton;
 
 import com.aps.dmo.Dijagram;
+import com.aps.dmo.Komponenta;
 import com.aps.figures.ComponentFigure;
 import com.aps.figures.ComponentInterfaceConnection;
 import com.aps.figures.InterfaceEmptyFigure;
+import com.aps.figures.InterfaceFigure;
 import com.aps.figures.InterfaceFullFigure;
 import com.aps.figures.InterfaceInterfaceConnection;
 import com.aps.figures.StereotipDecorator;
@@ -54,6 +59,8 @@ public class ClientApp extends DrawApplication {
 		this.clientName = clientName;
 		this.server = server;
 		this.dijagram = dijagram;
+
+		loadFromDB();
 	}
 
 	protected void createTools(Panel panel) {
@@ -66,24 +73,24 @@ public class ClientApp extends DrawApplication {
 
 		tool = new CreationTool(view(), new StereotipDecorator(new ComponentFigure(dijagram.getIme()),
 				Color.blue));
-		panel.add(createToolButton(DIAGRAM_IMAGES + "PERT", "Komponenta", tool));
+		panel.add(createToolButton(DIAGRAM_IMAGES + "PERT", "Component", tool));
 
 		ActionTool stereotipTool = new StereotipTool(view());
 		ToolButton atmosphereButton = new ToolButton(this, IMAGES + "PERT", "Stereotip Tool", stereotipTool);
 		panel.add(atmosphereButton);
 
 		ActionTool symbolTool = new SymbolTool(view());
-		ToolButton symbolButton = new ToolButton(this, IMAGES + "PERT", "Stereotip Tool", symbolTool);
+		ToolButton symbolButton = new ToolButton(this, IMAGES + "PERT", "Symbol Tool", symbolTool);
 		panel.add(symbolButton);
 
 		tool = new ConnectionTool(view(), new ComponentInterfaceConnection());
 		panel.add(createToolButton(IMAGES + "CONN", "Dependency Tool", tool));
 
 		tool = new CreationTool(view(), new InterfaceFullFigure());
-		panel.add(createToolButton(DIAGRAM_IMAGES + "PERT", "Komponenta", tool));
+		panel.add(createToolButton(DIAGRAM_IMAGES + "PERT", "Component", tool));
 
 		tool = new CreationTool(view(), new InterfaceEmptyFigure());
-		panel.add(createToolButton(DIAGRAM_IMAGES + "PERT", "Komponenta", tool));
+		panel.add(createToolButton(DIAGRAM_IMAGES + "PERT", "Component", tool));
 
 		tool = new ConnectionTool(view(), new InterfaceInterfaceConnection());
 		panel.add(createToolButton(IMAGES + "CONN", "Dependency Tool", tool));
@@ -171,7 +178,6 @@ public class ClientApp extends DrawApplication {
 			public void windowClosing(WindowEvent event) {
 				dispose();
 				server.clientDisposed(dijagram, ClientApp.this);
-				ORMManager.getManager().closeSession();
 			}
 		});
 	}
@@ -184,34 +190,65 @@ public class ClientApp extends DrawApplication {
 		if (wPermission && !this.wPermission) {
 			JOptionPane.showMessageDialog(ClientApp.this, "Write permission granted", "Permission",
 					JOptionPane.INFORMATION_MESSAGE);
-		} else if (!wPermission && this.wPermission) {
-			JOptionPane.showMessageDialog(ClientApp.this, "Write permission restricted", "Permission",
+		} else if (!wPermission && !this.wPermission) {
+			JOptionPane.showMessageDialog(ClientApp.this, "Read permission granted", "Permission",
 					JOptionPane.INFORMATION_MESSAGE);
 		}
 		this.wPermission = wPermission;
 	}
 
+	private void loadFromDB() {
+		ORMManager.getManager().loadDiagramTree(dijagram);
+	}
+
+	/**
+	 * Creates the drawing used in this application. You need to override this method to use a Drawing
+	 * subclass in your application. By default a standard Drawing is returned.
+	 */
+	protected Drawing createDrawing() {
+		Drawing drawing = new StandardDrawing();
+
+		for (Komponenta komponenta : dijagram.getKomponente()) {
+			Figure figK = ComponentFigure.createComponent(komponenta);
+			drawing.add(figK);
+		}
+
+		return drawing;
+	}
+
 	public void saveToDB() {
-		// dopuni DMO dijagram sa realnim figurama
-		/*
-		 * FigureEnumeration figure = drawing().figures();
-		 * 
-		 * while (figure.hasMoreElements()) { Figure fig = figure.nextFigure(); if (fig instanceof
-		 * ComponentFigure || fig instanceof DecoratorFigure) { Komponenta komponenta = new Komponenta(fig,
-		 * dijagram, modelInterfejsi); dijagram.getKomponente().add(komponenta); } }
-		 * 
-		 * 
-		 * /* for (Interfejs interfejs : modelInterfejsi) { // prodji kroz sve zive interface if
-		 * (interfejs.getInterfejsFigura().connectedInterfaces.size() > 0) { // ako neki od njih ima vise //
-		 * od 0 konekcije for (InterfaceFigure figura : interfejs.getInterfejsFigura().connectedInterfaces) //
-		 * prodji kroz sve interface u globalu
-		 * 
-		 * for (Interfejs interfejsIn : modelInterfejsi) { // i uporedi ih sa konekcijama if
-		 * (figura.equals(interfejsIn.getInterfejsFigura())) { interfejs.getInterfejsi().add(interfejsIn); } }
-		 * } }
-		 */
+		boolean canSave = true;
+		FigureEnumeration figure = drawing().figures();
+
+		while (figure.hasMoreElements()) {
+			Figure fig = figure.nextFigure();
+			if (fig instanceof ComponentFigure) {
+				if (((ComponentFigure) fig).errorNotation) {
+					canSave = false;
+					break;
+				}
+			} else if (fig instanceof DecoratorFigure) {
+				while (fig instanceof DecoratorFigure) {
+					fig = ((DecoratorFigure) fig).peelDecoration();
+				}
+				if (((ComponentFigure) fig).errorNotation) {
+					canSave = false;
+					break;
+				}
+
+			} else if (fig instanceof InterfaceFigure) {
+				if (((InterfaceFigure) fig).errorNotation) {
+					canSave = false;
+					break;
+				}
+			}
+		}
 
 		// sacuvaj dijagram for real
-		ORMManager.getManager().saveDiagram(dijagram);
+		if (canSave)
+			ORMManager.getManager().saveDiagram(dijagram);
+		else
+			JOptionPane.showMessageDialog(ClientApp.this, "Digram is not in consistent state!",
+					"Cannot save", JOptionPane.WARNING_MESSAGE);
 	}
 }
