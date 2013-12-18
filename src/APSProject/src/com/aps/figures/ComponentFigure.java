@@ -20,6 +20,7 @@ import CH.ifa.draw.standard.BoxHandleKit;
 import CH.ifa.draw.standard.ConnectionHandle;
 import CH.ifa.draw.standard.RelativeLocator;
 
+import com.aps.connections.ComponentInterfaceConnection;
 import com.aps.core.MainWindow;
 import com.aps.dmo.Dijagram;
 import com.aps.dmo.Komponenta;
@@ -27,7 +28,7 @@ import com.aps.dmo.Komponenta;
 public class ComponentFigure extends GroupFigure {
 
 	// db model
-	Komponenta dbKomponenta = new Komponenta();
+	public Komponenta dbKomponenta = new Komponenta();
 	public boolean dekoracija = false;
 	public boolean stereotip = true;
 
@@ -255,8 +256,8 @@ public class ComponentFigure extends GroupFigure {
 		if (k.isStereotip())
 			rezultat = new StereotipDecorator(rezultat, Color.blue);
 
-		rez.displayBox(new Point(k.getPosX(), k.getPosY()), new Point(k.getPosX() + k.getWidth(), k.getPosY()
-				+ k.getHeight()));
+		rez.displayBox(new Point(k.getPosX(), k.getPosY()),
+				new Point(k.getPosX() + k.getWidth(), k.getPosY()));
 
 		return rezultat;
 	}

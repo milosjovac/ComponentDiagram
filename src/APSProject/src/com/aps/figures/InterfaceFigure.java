@@ -116,7 +116,7 @@ public abstract class InterfaceFigure extends GroupFigure {
 		dbInterfejsModel.setName(name.getText().toString());
 		dbInterfejsModel.setPosX(displayBox().x);
 		dbInterfejsModel.setPosY(displayBox().y);
-		
+
 		// dodati komponentu kroz CompInt konektor hendler
 		// dodati interfejse kroz IntOInt konek,...
 	}
@@ -168,14 +168,22 @@ public abstract class InterfaceFigure extends GroupFigure {
 
 	public static Figure createInterface(Interfejs i, Figure c) {
 		InterfaceFigure rezultat = null;
-		/*
-		 * if (i.getTip().equals("empty")) { rezultat = new InterfaceEmptyFigure(); } else { rezultat = new
-		 * InterfaceFullFigure(); }
-		 * 
-		 * TextFigure tf = new TextFigure(); tf.setText(i.getName()); rezultat.name = tf;
-		 * rezultat.displayBox(new Point(i.getX(), i.getY()), new Point(i.getX() + i.getWidth(), i.getY() +
-		 * i.getHeight())); rezultat.parentFigure = c; if (c != null) rezultat.errorNotation = false;
-		 */
+		
+
+		if (i.isTip()) {
+			rezultat = new InterfaceFullFigure();
+		} else {
+			rezultat = new InterfaceEmptyFigure();
+		}
+
+		rezultat.dbInterfejsModel = i;
+		rezultat.name.setText(i.getName());
+
+		rezultat.displayBox(new Point(i.getPosX(), i.getPosY()), new Point(i.getPosX(), i.getPosY()));
+
+		rezultat.parentFigure = c;
+		if (c != null)
+			rezultat.errorNotation = false;
 
 		return rezultat;
 	}

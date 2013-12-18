@@ -3,6 +3,7 @@ package com.aps.dmo;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -41,11 +42,23 @@ public class Interfejs implements java.io.Serializable {
 	@JoinColumn(name = "COMPONENT_ID")
 	private Komponenta komponenta;
 
+	@ManyToOne(cascade={CascadeType.ALL})
+	@JoinColumn(name="PROVIDER_ID")
+	private Interfejs provider;
+
 	@OneToMany
-	@JoinTable(name = "INTERFACE_DEPENDECY", joinColumns = @JoinColumn(name = "INT_FROM"), inverseJoinColumns = @JoinColumn(name = "INT_TO"))
-	private Collection<Interfejs> interfejsi = new ArrayList<Interfejs>();
+	@JoinTable(name = "INTERFACE_DEPENDECY", joinColumns = @JoinColumn(name = "PROVIDER_ID"), inverseJoinColumns = @JoinColumn(name = "SLOT_ID"))
+	private Collection<Interfejs> soketi = new ArrayList<Interfejs>();
 
 	public Interfejs() {
+	}
+
+	public Interfejs getProvider() {
+		return provider;
+	}
+
+	public void setProvider(Interfejs provider) {
+		this.provider = provider;
 	}
 
 	public int getId() {
@@ -96,11 +109,12 @@ public class Interfejs implements java.io.Serializable {
 		this.komponenta = komponenta;
 	}
 
-	public Collection<Interfejs> getInterfejsi() {
-		return interfejsi;
+	public Collection<Interfejs> getSoketi() {
+		return soketi;
 	}
 
-	public void setInterfejsi(Collection<Interfejs> interfejsi) {
-		this.interfejsi = interfejsi;
+	public void setSoketi(Collection<Interfejs> soketi) {
+		this.soketi = soketi;
 	}
+
 }

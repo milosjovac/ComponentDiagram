@@ -1,8 +1,10 @@
-package com.aps.figures;
+package com.aps.connections;
 
 import java.util.Vector;
 
-import com.aps.dmo.Interfejs;
+import com.aps.figures.ComponentFigure;
+import com.aps.figures.InterfaceEmptyFigure;
+import com.aps.figures.InterfaceFigure;
 
 import CH.ifa.draw.figures.LineConnection;
 import CH.ifa.draw.figures.PolyLineFigure;
@@ -37,13 +39,18 @@ public class ComponentInterfaceConnection extends LineConnection {
 
 		// FUNKCIJA UNUTAR INTERFEJSA ZA SPAJANJe (OBSERVER!!!!!)
 
-		komponenta.interfejsi.add(interfejs);
+		if (!komponenta.interfejsi.contains(interfejs))
+			komponenta.interfejsi.add(interfejs);
+
 		interfejs.parentFigure = komponenta;
 		interfejs.errorNotation = false;
 
 		// dodao Nex u model object interfejsa dodao model object komponente
-		interfejs.dbInterfejsModel.setKomponenta(komponenta.dbKomponenta);
-		komponenta.dbKomponenta.getInterfejsi().add(interfejs.dbInterfejsModel);
+		if (interfejs.dbInterfejsModel.getKomponenta() != komponenta.dbKomponenta)
+			interfejs.dbInterfejsModel.setKomponenta(komponenta.dbKomponenta);
+
+		if (!komponenta.dbKomponenta.getInterfejsi().contains(interfejs.dbInterfejsModel))
+			komponenta.dbKomponenta.getInterfejsi().add(interfejs.dbInterfejsModel);
 
 		if (interfejs instanceof InterfaceEmptyFigure)
 			((InterfaceEmptyFigure) interfejs).rotate();
@@ -76,13 +83,18 @@ public class ComponentInterfaceConnection extends LineConnection {
 
 	}
 
+	// MOGUCI KVAR ZA UPDATE FUNKCIJU
 	public boolean canConnect(Figure start, Figure end) {
+
+		Figure pomStart = start;
+		Figure pomEnd = end;
 
 		InterfaceFigure interfejs = null;
 		ComponentFigure komponenta = null;
 
 		if ((start instanceof ComponentFigure || start instanceof DecoratorFigure)
 				&& end instanceof InterfaceFigure) {
+
 			while (start instanceof DecoratorFigure)
 				start = ((DecoratorFigure) start).peelDecoration();
 
@@ -96,6 +108,9 @@ public class ComponentInterfaceConnection extends LineConnection {
 			komponenta = (ComponentFigure) end;
 			interfejs = (InterfaceFigure) start;
 		}
+
+		start = pomStart;
+		end = pomEnd;
 
 		if (interfejs == null || komponenta == null)
 			return false;

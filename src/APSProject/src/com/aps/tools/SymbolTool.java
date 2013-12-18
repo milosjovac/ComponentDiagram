@@ -1,6 +1,10 @@
-package com.aps.figures;
+package com.aps.tools;
 
 import java.awt.Color;
+
+import com.aps.figures.ComponentFigure;
+import com.aps.figures.StereotipDecorator;
+import com.aps.figures.SymbolDecorator;
 
 import CH.ifa.draw.framework.DrawingView;
 import CH.ifa.draw.framework.Figure;

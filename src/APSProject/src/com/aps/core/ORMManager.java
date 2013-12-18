@@ -47,29 +47,43 @@ public class ORMManager {
 	}
 
 	private List<?> executeQuery(String query) {
+		List<?> resultList = null;
 
-		session.beginTransaction();
+		try {
+			session.beginTransaction();
 
-		Query q = session.createQuery(query);
-		List<?> resultList = q.list();
+			Query q = session.createQuery(query);
+			resultList = q.list();
 
-		session.getTransaction().commit();
+			session.getTransaction().commit();
+		} catch (RuntimeException e) {
+			System.out.println(e);
+			session.getTransaction().rollback();
+			throw e;
+		}
 		return resultList;
 	}
 
 	public void saveDiagram(Dijagram dijagram) {
-		session.beginTransaction();
+		try {
+			session.beginTransaction();
 
-		session.save(dijagram);
+			session.save(dijagram);
 
-		for (Komponenta komponenta : dijagram.getKomponente()) {
-			session.save(komponenta);
-			for (Interfejs interfesjs : komponenta.getInterfejsi()) {
-				session.save(interfesjs);
+			for (Komponenta komponenta : dijagram.getKomponente()) {
+				session.save(komponenta);
+				for (Interfejs interfesjs : komponenta.getInterfejsi()) {
+					session.save(interfesjs);
+				}
 			}
-		}
 
-		session.getTransaction().commit();
+			session.getTransaction().commit();
+
+		} catch (RuntimeException e) {
+			System.out.println(e);
+			session.getTransaction().rollback();
+			throw e;
+		}
 	}
 
 	public void createSession() {
@@ -81,12 +95,19 @@ public class ORMManager {
 	}
 
 	public void loadDiagramTree(Dijagram dijagram) {
-		session.beginTransaction();
-		for (Komponenta k : dijagram.getKomponente()) {
-			k.getInterfejsi();
-			for (Interfejs inter : k.getInterfejsi())
-				inter.getInterfejsi();
+		try {
+			session.beginTransaction();
+			for (Komponenta k : dijagram.getKomponente()) {
+				k.getInterfejsi();
+				for (Interfejs inter : k.getInterfejsi())
+					inter.getSoketi();
+			}
+			session.getTransaction().commit();
+
+		} catch (RuntimeException e) {
+			System.out.println(e);
+			session.getTransaction().rollback();
+			throw e;
 		}
-		session.getTransaction().commit();
 	}
 }

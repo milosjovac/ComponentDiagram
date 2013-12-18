@@ -1,6 +1,10 @@
-package com.aps.figures;
+package com.aps.connections;
 
 import java.util.Vector;
+
+import com.aps.figures.InterfaceEmptyFigure;
+import com.aps.figures.InterfaceFigure;
+import com.aps.figures.InterfaceFullFigure;
 
 import CH.ifa.draw.figures.ArrowTip;
 import CH.ifa.draw.figures.LineConnection;
@@ -34,8 +38,8 @@ public class InterfaceInterfaceConnection extends LineConnection {
 			slot = (InterfaceEmptyFigure) start;
 		}
 
-		slot.dbInterfejsModel.getInterfejsi().add(provider.dbInterfejsModel);
-		provider.dbInterfejsModel.getInterfejsi().add(slot.dbInterfejsModel);
+		slot.dbInterfejsModel.setProvider(provider.dbInterfejsModel);
+		provider.dbInterfejsModel.getSoketi().add(slot.dbInterfejsModel);
 
 		//
 
@@ -62,8 +66,8 @@ public class InterfaceInterfaceConnection extends LineConnection {
 			slot = (InterfaceEmptyFigure) start;
 		}
 
-		slot.dbInterfejsModel.getInterfejsi().remove(provider.dbInterfejsModel);
-		provider.dbInterfejsModel.getInterfejsi().remove(slot.dbInterfejsModel);
+		slot.dbInterfejsModel.setProvider(null);
+		provider.dbInterfejsModel.getSoketi().remove(slot.dbInterfejsModel);
 
 		if (slot.connectedInterfaces.contains(provider))
 			slot.connectedInterfaces.remove(provider);
@@ -79,7 +83,8 @@ public class InterfaceInterfaceConnection extends LineConnection {
 				if (((InterfaceFigure) start).parentFigure != null
 						&& ((InterfaceFigure) end).parentFigure != null)
 					if (!((InterfaceFigure) start).parentFigure.equals(((InterfaceFigure) end).parentFigure))
-						return true;
+						if (((InterfaceEmptyFigure) start).dbInterfejsModel.getProvider() == null)
+							return true;
 		}
 		return false;
 	}

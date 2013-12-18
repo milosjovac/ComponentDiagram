@@ -5,6 +5,7 @@ import java.awt.Menu;
 import java.awt.MenuItem;
 import java.awt.MenuShortcut;
 import java.awt.Panel;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -24,34 +25,31 @@ import CH.ifa.draw.standard.CreationTool;
 import CH.ifa.draw.standard.DecoratorFigure;
 import CH.ifa.draw.standard.StandardDrawing;
 import CH.ifa.draw.standard.ToolButton;
+import CH.ifa.draw.util.Geom;
 
+import com.aps.connections.ComponentInterfaceConnection;
+import com.aps.connections.InterfaceInterfaceConnection;
 import com.aps.dmo.Dijagram;
+import com.aps.dmo.Interfejs;
 import com.aps.dmo.Komponenta;
 import com.aps.figures.ComponentFigure;
-import com.aps.figures.ComponentInterfaceConnection;
 import com.aps.figures.InterfaceEmptyFigure;
 import com.aps.figures.InterfaceFigure;
 import com.aps.figures.InterfaceFullFigure;
-import com.aps.figures.InterfaceInterfaceConnection;
 import com.aps.figures.StereotipDecorator;
-import com.aps.figures.StereotipTool;
-import com.aps.figures.SymbolTool;
+import com.aps.tools.StereotipTool;
+import com.aps.tools.SymbolTool;
 
 public class ClientApp extends DrawApplication {
 
 	private static final long serialVersionUID = 5251415922750693346L;
-	static private final String DIAGRAM_IMAGES = "/dijagram/images/";
+	public static final String DIAGRAM_IMAGES = "/com/aps/images/";
 
 	Dijagram dijagram;
 
 	private boolean wPermission = false;
 	String clientName;
 	MainWindow server;
-
-	int Did; // cita se iz baze
-	String Dname = "Dijagram Nexoslavljev"; // cita se iz baze
-
-	// HashMap<Komponenta, List<Interfejs>> komponente;
 
 	public ClientApp(MainWindow server, String title, MainWindow mainWindow, Dijagram dijagram,
 			String clientName) {
@@ -73,27 +71,28 @@ public class ClientApp extends DrawApplication {
 
 		tool = new CreationTool(view(), new StereotipDecorator(new ComponentFigure(dijagram.getIme()),
 				Color.blue));
-		panel.add(createToolButton(DIAGRAM_IMAGES + "PERT", "Component", tool));
+		panel.add(createToolButton(DIAGRAM_IMAGES + "DEKORACIJA", "Component Tool", tool));
 
 		ActionTool stereotipTool = new StereotipTool(view());
-		ToolButton atmosphereButton = new ToolButton(this, IMAGES + "PERT", "Stereotip Tool", stereotipTool);
+		ToolButton atmosphereButton = new ToolButton(this, DIAGRAM_IMAGES + "STEREOTIP_", "Stereotip Tool",
+				stereotipTool);
 		panel.add(atmosphereButton);
 
 		ActionTool symbolTool = new SymbolTool(view());
-		ToolButton symbolButton = new ToolButton(this, IMAGES + "PERT", "Symbol Tool", symbolTool);
+		ToolButton symbolButton = new ToolButton(this, DIAGRAM_IMAGES + "DEK", "Decoration Tool", symbolTool);
 		panel.add(symbolButton);
 
 		tool = new ConnectionTool(view(), new ComponentInterfaceConnection());
-		panel.add(createToolButton(IMAGES + "CONN", "Dependency Tool", tool));
+		panel.add(createToolButton(DIAGRAM_IMAGES + "CONN", "Implementation Connector Tool", tool));
 
 		tool = new CreationTool(view(), new InterfaceFullFigure());
-		panel.add(createToolButton(DIAGRAM_IMAGES + "PERT", "Component", tool));
+		panel.add(createToolButton(DIAGRAM_IMAGES + "INT_FULL", "Provider Tool", tool));
 
 		tool = new CreationTool(view(), new InterfaceEmptyFigure());
-		panel.add(createToolButton(DIAGRAM_IMAGES + "PERT", "Component", tool));
+		panel.add(createToolButton(DIAGRAM_IMAGES + "INT_EMPTY", "Socket Tool", tool));
 
 		tool = new ConnectionTool(view(), new InterfaceInterfaceConnection());
-		panel.add(createToolButton(IMAGES + "CONN", "Dependency Tool", tool));
+		panel.add(createToolButton(DIAGRAM_IMAGES + "INT_CONN", "Interface Connector Tool", tool));
 
 	}
 
@@ -211,6 +210,30 @@ public class ClientApp extends DrawApplication {
 		for (Komponenta komponenta : dijagram.getKomponente()) {
 			Figure figK = ComponentFigure.createComponent(komponenta);
 			drawing.add(figK);
+
+			for (Interfejs interfejs : komponenta.getInterfejsi()) {
+				
+				Figure figI = InterfaceFigure.createInterface(interfejs, figK);
+				drawing.add(figI);
+
+				// CRTANJE VEZE OD KOMPONENTE ZA INTERFEJSIMA
+				ComponentInterfaceConnection veza = new ComponentInterfaceConnection();
+
+				if (veza.canConnect(figK, figI)) {
+
+					Point startPoint = Geom.center(figK.displayBox());
+					veza.startPoint(startPoint.x, startPoint.y);
+					veza.connectStart(figK.connectorAt(figK.displayBox().x, figK.displayBox().y));
+					Point endPoint = Geom.center(figI.displayBox());
+					veza.endPoint(endPoint.x, endPoint.y);
+					veza.connectEnd(figI.connectorAt(figI.displayBox().x, figI.displayBox().y));
+					veza.updateConnection();
+
+					drawing.add(veza);
+				}
+
+			}
+
 		}
 
 		return drawing;

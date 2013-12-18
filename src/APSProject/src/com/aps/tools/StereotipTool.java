@@ -2,7 +2,7 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.aps.figures;
+package com.aps.tools;
 
 import CH.ifa.draw.framework.DrawingView;
 import CH.ifa.draw.framework.Figure;
@@ -10,6 +10,10 @@ import CH.ifa.draw.standard.ActionTool;
 import CH.ifa.draw.standard.DecoratorFigure;
 
 import java.awt.Color;
+
+import com.aps.figures.ComponentFigure;
+import com.aps.figures.StereotipDecorator;
+import com.aps.figures.SymbolDecorator;
 
 /**
  * 

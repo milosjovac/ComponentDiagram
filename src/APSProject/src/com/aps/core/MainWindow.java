@@ -1,12 +1,10 @@
 package com.aps.core;
 
 import java.awt.EventQueue;
-
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
-
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
@@ -15,13 +13,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
-
 import javax.swing.JComboBox;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
-import org.hibernate.SessionFactory;
-import org.omg.CORBA.OMGVMCID;
-
 import com.aps.dmo.Dijagram;
 
 public class MainWindow {
@@ -99,6 +93,7 @@ public class MainWindow {
 		// comboBox.setSelectedIndex(4);
 
 		JButton btnNewButton = new JButton("Start client");
+
 		btnNewButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 
@@ -161,7 +156,7 @@ public class MainWindow {
 		model.addColumn("Working queue");
 		table.setBounds(12, 77, 432, 196);
 		frame.getContentPane().add(table);
-
+		btnNewButton.requestFocusInWindow();
 	}
 
 	public void refreshTableStat() {
