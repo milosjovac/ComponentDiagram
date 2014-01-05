@@ -27,7 +27,7 @@ public class MainWindow {
 	DefaultTableModel model = new DefaultTableModel();
 	JTable table = new JTable(model);
 
-	private HashMap<Dijagram, Queue<ClientApp>> statistika = new HashMap<>();
+	private HashMap<Dijagram, ArrayList<ClientApp>> statistika = new HashMap<>();
 
 	private Collection<ClientApp> clientWindows = new ArrayList<ClientApp>();
 
@@ -58,10 +58,16 @@ public class MainWindow {
 	/**
 	 * Initialize the contents of the frame.
 	 */
-	public void updateObservers() {
-		for (ClientApp ca : clientWindows) {
+	public void updateObservers(Dijagram dijagram) {
+
+		ArrayList<ClientApp> observeri = statistika.get(dijagram);
+		// Brisemo prvi jer je on onaj koji menja crtez
+		for (int i = 1; i < observeri.size(); i++) {
+			ClientApp ca = observeri.get(i);
+			//ca.setDijagram(dijagram);
 			ca.reloadDrawing();
 		}
+
 	}
 
 	private void initialize() {
@@ -135,7 +141,7 @@ public class MainWindow {
 				dijagramiAktivni.add(dijagram);
 
 				if (statistika.get(dijagram) == null) {
-					Queue q = new LinkedList<ClientApp>();
+					ArrayList<ClientApp> q = new ArrayList<ClientApp>();
 					q.add(client);
 					statistika.put(dijagram, q);
 				} else {
@@ -143,6 +149,8 @@ public class MainWindow {
 				}
 				if (statistika.get(dijagram).size() == 1)
 					client.setwPermission(true);
+				else
+					client.setwPermission(false);
 
 				refreshTableStat();
 
@@ -178,7 +186,7 @@ public class MainWindow {
 
 		statistika.get(d).remove(client);
 		if (statistika.get(d).size() > 0)
-			statistika.get(d).peek().setwPermission(true);
+			statistika.get(d).get(0).setwPermission(true);
 		else
 			statistika.remove(d);
 		refreshTableStat();

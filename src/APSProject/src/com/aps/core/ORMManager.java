@@ -64,7 +64,8 @@ public class ORMManager {
 		return resultList;
 	}
 
-	public void saveDiagram(Dijagram dijagram) {
+	public boolean saveDiagram(Dijagram dijagram) {
+		boolean result = false;
 		try {
 			session.beginTransaction();
 
@@ -78,12 +79,15 @@ public class ORMManager {
 			}
 
 			session.getTransaction().commit();
+			session.flush();
 
 		} catch (RuntimeException e) {
 			System.out.println(e);
 			session.getTransaction().rollback();
 			throw e;
 		}
+
+		return true;
 	}
 
 	public void createSession() {
@@ -97,7 +101,11 @@ public class ORMManager {
 	public void loadDiagramTree(Dijagram dijagram) {
 		try {
 			session.beginTransaction();
+			session.evict(dijagram);
+		
+
 			for (Komponenta k : dijagram.getKomponente()) {
+
 				k.getInterfejsi();
 				for (Interfejs inter : k.getInterfejsi())
 					inter.getSoketi();

@@ -27,10 +27,14 @@ public class SymbolDecorator extends DecoratorFigure {
 
 	public SymbolDecorator(Figure figure, Color newColour) {
 		super(figure);
-		while(figure instanceof DecoratorFigure){
-        	figure =((DecoratorFigure) figure).peelDecoration();
-        }
-        ((ComponentFigure)figure).dekoracija = true;
+		Figure tempFig = figure;
+		while (tempFig instanceof DecoratorFigure) {
+			if (tempFig instanceof StereotipDecorator)
+				tempFig = ((StereotipDecorator) tempFig).getComponent();
+			if (tempFig instanceof SymbolDecorator)
+				tempFig = ((SymbolDecorator) tempFig).getComponent();
+		}
+		((ComponentFigure) tempFig).dekoracija = true;
 		colour = newColour;
 	}
 
@@ -63,5 +67,9 @@ public class SymbolDecorator extends DecoratorFigure {
 		g.fillRect(x - 7, y + 5, 15, 7);
 		g.fillRect(x - 7, y + 17, 15, 7);
 
+	}
+
+	public Figure getComponent() {
+		return super.fComponent;
 	}
 }

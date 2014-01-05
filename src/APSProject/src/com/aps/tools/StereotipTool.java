@@ -57,4 +57,5 @@ public class StereotipTool extends ActionTool {
 			drawing().replace(figure, new StereotipDecorator(figure, Color.blue));
 		}
 	}
+
 }

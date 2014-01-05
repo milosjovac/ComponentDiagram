@@ -10,12 +10,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
+
 import javax.swing.JOptionPane;
 
 import CH.ifa.draw.application.DrawApplication;
 import CH.ifa.draw.figures.TextFigure;
 import CH.ifa.draw.figures.TextTool;
 import CH.ifa.draw.framework.Drawing;
+import CH.ifa.draw.framework.DrawingChangeEvent;
+import CH.ifa.draw.framework.DrawingChangeListener;
 import CH.ifa.draw.framework.Figure;
 import CH.ifa.draw.framework.FigureEnumeration;
 import CH.ifa.draw.framework.Tool;
@@ -37,6 +41,7 @@ import com.aps.figures.InterfaceEmptyFigure;
 import com.aps.figures.InterfaceFigure;
 import com.aps.figures.InterfaceFullFigure;
 import com.aps.figures.StereotipDecorator;
+import com.aps.figures.SymbolDecorator;
 import com.aps.tools.StereotipTool;
 import com.aps.tools.SymbolTool;
 
@@ -51,14 +56,40 @@ public class ClientApp extends DrawApplication {
 	String clientName;
 	MainWindow server;
 
+	Thread savingThread;
+	public static boolean dirty = false;
+	boolean savingInProcess = false;
+
 	public ClientApp(MainWindow server, String title, MainWindow mainWindow, Dijagram dijagram,
 			String clientName) {
 		super(title + " - " + clientName);
 		this.clientName = clientName;
 		this.server = server;
 		this.dijagram = dijagram;
-
+		System.out.println(clientName + " : " + dijagram.hashCode());
 		loadFromDB();
+		// startSavingProcess();
+	}
+
+	private void startSavingProcess() {
+		savingThread = new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				while (!savingThread.isInterrupted()) {
+					if (dirty && wPermission) {
+						if (saveToDB())
+							updateObservers(dijagram);
+						dirty = false;
+					}
+				}
+			}
+		});
+		savingThread.start();
+	}
+
+	public void updateObservers(Dijagram dijagram) {
+		server.updateObservers(dijagram);
 	}
 
 	protected void createTools(Panel panel) {
@@ -96,33 +127,11 @@ public class ClientApp extends DrawApplication {
 
 	}
 
-	/**
-	 * Creates the drawing used in this application. You need to override this method to use a Drawing
-	 * subclass in your application. By default a standard Drawing is returned.
-	 */
-	/*
-	 * protected Drawing createDrawing() { Drawing d = new StandardDrawing();
-	 * 
-	 * List<Komponenta> kk = new LinkedList(komponente.keySet());
-	 * 
-	 * for (Komponenta k : kk) { Figure figK = ComponentFigure.createComponent(k); for (Interfejs i :
-	 * komponente.get(k)) { Figure figI = InterfaceFigure.createInterface(i, figK); d.add(figI);
-	 * 
-	 * ComponentInterfaceConnection conCI = new ComponentInterfaceConnection(); }
-	 * 
-	 * d.add(figK); } /* ConnectionFigure cf = new SmartConnectionFigure(); cf.setLiner(new ElbowLiner());
-	 * cf.setStartConnector(ta.findConnector(Geom.center(ta.getBounds()), cf));
-	 * cf.setEndConnector(tb.findConnector(Geom.center(tb.getBounds()), cf));
-	 */
-
-	/*
-	 * return d; }
-	 */
-
 	@Override
 	public void promptSaveAs() {
 		toolDone();
 		saveToDB();
+		updateObservers(dijagram);
 		// Save the mutherfucker
 	}
 
@@ -159,7 +168,9 @@ public class ClientApp extends DrawApplication {
 		mi = new MenuItem("Exit");
 		mi.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
-				exit();
+				savingThread.interrupt();
+				dispose();
+				server.clientDisposed(dijagram, ClientApp.this);
 			}
 		});
 		menu.add(mi);
@@ -167,14 +178,24 @@ public class ClientApp extends DrawApplication {
 	}
 
 	public void reloadDrawing() {
-		// TODO Auto-generated method stub
+		System.out.println("updated as shit");
+		FigureEnumeration figures = drawing().figures();
+		while (figures.hasMoreElements()) {
+			Figure fig = figures.nextFigure();
+			drawing().remove(fig);
+		}
+		dijagram.getKomponente().clear();
 
+		loadFromDB();
+
+		createDrawingFromDB(drawing());
 	}
 
 	@Override
 	protected void addListeners() {
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent event) {
+			//	savingThread.interrupt();
 				dispose();
 				server.clientDisposed(dijagram, ClientApp.this);
 			}
@@ -207,14 +228,42 @@ public class ClientApp extends DrawApplication {
 	protected Drawing createDrawing() {
 		Drawing drawing = new StandardDrawing();
 
+		createDrawingFromDB(drawing);
+
+		drawing.addDrawingChangeListener(new DrawingChangeListener() {
+
+			@Override
+			public void drawingRequestUpdate(DrawingChangeEvent e) {
+			}
+
+			@Override
+			public void drawingInvalidated(DrawingChangeEvent e) {
+				dirty = true;
+			}
+		});
+		return drawing;
+	}
+
+	private void createDrawingFromDB(Drawing drawing) {
+		ArrayList<InterfaceFigure> providers = new ArrayList<>();
+		ArrayList<InterfaceFigure> socets = new ArrayList<>();
+
+		System.out.println(clientName + " : " + dijagram.hashCode());
+
+		// KREIRANJE SVIH KOMPONENTI I NJIOVIH INTERFEJSA
 		for (Komponenta komponenta : dijagram.getKomponente()) {
 			Figure figK = ComponentFigure.createComponent(komponenta);
 			drawing.add(figK);
 
 			for (Interfejs interfejs : komponenta.getInterfejsi()) {
-				
-				Figure figI = InterfaceFigure.createInterface(interfejs, figK);
+
+				InterfaceFigure figI = InterfaceFigure.createInterface(interfejs, figK);
 				drawing.add(figI);
+
+				if (figI instanceof InterfaceEmptyFigure)
+					socets.add(figI);
+				else if (figI instanceof InterfaceFullFigure)
+					providers.add(figI);
 
 				// CRTANJE VEZE OD KOMPONENTE ZA INTERFEJSIMA
 				ComponentInterfaceConnection veza = new ComponentInterfaceConnection();
@@ -231,30 +280,53 @@ public class ClientApp extends DrawApplication {
 
 					drawing.add(veza);
 				}
-
 			}
-
 		}
 
-		return drawing;
+		// KREIRANJE VEZA IZMEDJU INTERFEJSA
+		for (InterfaceFigure provider : providers)
+			for (Interfejs soketModel : provider.dbInterfejsModel.getSoketi())
+				for (InterfaceFigure soket : socets)
+					if (soket.dbInterfejsModel.equals(soketModel)) {
+						// pravimo vezu
+						// CRTANJE VEZE OD INT KA INTERFEJSIMA
+						InterfaceInterfaceConnection veza = new InterfaceInterfaceConnection();
+
+						Point startPoint = Geom.center(soket.displayBox());
+						veza.startPoint(startPoint.x, startPoint.y);
+						veza.connectStart(soket.connectorAt(soket.displayBox().x, soket.displayBox().y));
+
+						Point endPoint = Geom.center(provider.displayBox());
+						veza.endPoint(endPoint.x, endPoint.y);
+						veza.connectEnd(provider.connectorAt(provider.displayBox().x, provider.displayBox().y));
+						veza.updateConnection();
+
+						drawing.add(veza);
+
+					}
+
 	}
 
-	public void saveToDB() {
+	public boolean saveToDB() {
 		boolean canSave = true;
-		FigureEnumeration figure = drawing().figures();
+		FigureEnumeration figures = drawing().figures();
 
-		while (figure.hasMoreElements()) {
-			Figure fig = figure.nextFigure();
-			if (fig instanceof ComponentFigure) {
-				if (((ComponentFigure) fig).errorNotation) {
+		while (figures.hasMoreElements()) {
+			Figure fig = figures.nextFigure();
+			Figure tempFig = fig;
+			if (tempFig instanceof ComponentFigure) {
+				if (((ComponentFigure) tempFig).errorNotation) {
 					canSave = false;
 					break;
 				}
-			} else if (fig instanceof DecoratorFigure) {
-				while (fig instanceof DecoratorFigure) {
-					fig = ((DecoratorFigure) fig).peelDecoration();
+			} else if (tempFig instanceof DecoratorFigure) {
+				while (tempFig instanceof DecoratorFigure) {
+					if (tempFig instanceof StereotipDecorator)
+						tempFig = ((StereotipDecorator) tempFig).getComponent();
+					if (tempFig instanceof SymbolDecorator)
+						tempFig = ((SymbolDecorator) tempFig).getComponent();
 				}
-				if (((ComponentFigure) fig).errorNotation) {
+				if (((ComponentFigure) tempFig).errorNotation) {
 					canSave = false;
 					break;
 				}
@@ -265,13 +337,14 @@ public class ClientApp extends DrawApplication {
 					break;
 				}
 			}
+			tempFig = fig;
 		}
 
 		// sacuvaj dijagram for real
 		if (canSave)
-			ORMManager.getManager().saveDiagram(dijagram);
+			return (ORMManager.getManager().saveDiagram(dijagram));
 		else
-			JOptionPane.showMessageDialog(ClientApp.this, "Digram is not in consistent state!",
-					"Cannot save", JOptionPane.WARNING_MESSAGE);
+			return false;
 	}
+
 }

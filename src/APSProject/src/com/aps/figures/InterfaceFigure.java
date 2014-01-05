@@ -58,8 +58,7 @@ public abstract class InterfaceFigure extends GroupFigure {
 		name.setText("Name");
 		name.setAttribute("TextColor", Color.black);
 
-		super.add(name);
-
+		add(name);
 	}
 
 	@Override
@@ -166,9 +165,14 @@ public abstract class InterfaceFigure extends GroupFigure {
 		return true;
 	}
 
-	public static Figure createInterface(Interfejs i, Figure c) {
+	public void setName(TextFigure name) {
+		this.name = name;
+	}
+	
+
+
+	public static InterfaceFigure createInterface(Interfejs i, Figure c) {
 		InterfaceFigure rezultat = null;
-		
 
 		if (i.isTip()) {
 			rezultat = new InterfaceFullFigure();
@@ -176,8 +180,8 @@ public abstract class InterfaceFigure extends GroupFigure {
 			rezultat = new InterfaceEmptyFigure();
 		}
 
-		rezultat.dbInterfejsModel = i;
 		rezultat.name.setText(i.getName());
+		rezultat.dbInterfejsModel = i;
 
 		rezultat.displayBox(new Point(i.getPosX(), i.getPosY()), new Point(i.getPosX(), i.getPosY()));
 

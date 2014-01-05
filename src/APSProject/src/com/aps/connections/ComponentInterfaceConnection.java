@@ -5,6 +5,8 @@ import java.util.Vector;
 import com.aps.figures.ComponentFigure;
 import com.aps.figures.InterfaceEmptyFigure;
 import com.aps.figures.InterfaceFigure;
+import com.aps.figures.StereotipDecorator;
+import com.aps.figures.SymbolDecorator;
 
 import CH.ifa.draw.figures.LineConnection;
 import CH.ifa.draw.figures.PolyLineFigure;
@@ -86,31 +88,36 @@ public class ComponentInterfaceConnection extends LineConnection {
 	// MOGUCI KVAR ZA UPDATE FUNKCIJU
 	public boolean canConnect(Figure start, Figure end) {
 
-		Figure pomStart = start;
-		Figure pomEnd = end;
-
 		InterfaceFigure interfejs = null;
 		ComponentFigure komponenta = null;
 
-		if ((start instanceof ComponentFigure || start instanceof DecoratorFigure)
+		Figure tempStart = start;
+		Figure tempEnd = end;
+
+		if ((tempStart instanceof ComponentFigure || tempStart instanceof DecoratorFigure)
 				&& end instanceof InterfaceFigure) {
 
-			while (start instanceof DecoratorFigure)
-				start = ((DecoratorFigure) start).peelDecoration();
+			while (tempStart instanceof DecoratorFigure) {
+				if (tempStart instanceof StereotipDecorator)
+					tempStart = ((StereotipDecorator) tempStart).getComponent();
+				if (tempStart instanceof SymbolDecorator)
+					tempStart = ((SymbolDecorator) tempStart).getComponent();
+			}
 
-			komponenta = (ComponentFigure) start;
+			komponenta = (ComponentFigure) tempStart;
 			interfejs = (InterfaceFigure) end;
 
-		} else if (start instanceof InterfaceFigure
-				&& (end instanceof ComponentFigure || end instanceof DecoratorFigure)) {
-			while (end instanceof DecoratorFigure)
-				end = ((DecoratorFigure) end).peelDecoration();
-			komponenta = (ComponentFigure) end;
+		} else if (tempStart instanceof InterfaceFigure
+				&& (tempEnd instanceof ComponentFigure || tempEnd instanceof DecoratorFigure)) {
+			while (tempEnd instanceof DecoratorFigure) {
+				if (tempEnd instanceof StereotipDecorator)
+					tempEnd = ((StereotipDecorator) tempEnd).getComponent();
+				if (tempEnd instanceof SymbolDecorator)
+					tempEnd = ((SymbolDecorator) tempEnd).getComponent();
+			}
+			komponenta = (ComponentFigure) tempEnd;
 			interfejs = (InterfaceFigure) start;
 		}
-
-		start = pomStart;
-		end = pomEnd;
 
 		if (interfejs == null || komponenta == null)
 			return false;

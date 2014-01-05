@@ -29,13 +29,17 @@ public class StereotipDecorator extends DecoratorFigure {
 	}
 
 	public StereotipDecorator(Figure figure, Color newColour) {
-        super(figure);
-        while(figure instanceof DecoratorFigure){
-        	figure =((DecoratorFigure) figure).peelDecoration();
-        }
-        ((ComponentFigure)figure).stereotip = true;
-        colour = newColour;
-    }
+		super(figure);
+		Figure tempFig = figure;
+		while (tempFig instanceof DecoratorFigure) {
+			if (tempFig instanceof StereotipDecorator)
+				tempFig = ((StereotipDecorator) tempFig).getComponent();
+			if (tempFig instanceof SymbolDecorator)
+				tempFig = ((SymbolDecorator) tempFig).getComponent();
+		}
+		((ComponentFigure) tempFig).stereotip = true;
+		colour = newColour;
+	}
 
 	@Override
 	public Rectangle displayBox() {
@@ -66,5 +70,9 @@ public class StereotipDecorator extends DecoratorFigure {
 		stereotip.basicDisplayBox(new Point((int) (figR.x + (figR.width - stereotip.size().getWidth()) / 2),
 				figR.y), null);
 		stereotip.draw(g);
+	}
+
+	public Figure getComponent() {
+		return super.fComponent;
 	}
 }

@@ -2,15 +2,16 @@ package com.aps.connections;
 
 import java.util.Vector;
 
-import com.aps.figures.InterfaceEmptyFigure;
-import com.aps.figures.InterfaceFigure;
-import com.aps.figures.InterfaceFullFigure;
-
 import CH.ifa.draw.figures.ArrowTip;
 import CH.ifa.draw.figures.LineConnection;
 import CH.ifa.draw.figures.PolyLineFigure;
 import CH.ifa.draw.framework.Figure;
 import CH.ifa.draw.standard.NullHandle;
+
+import com.aps.dmo.Interfejs;
+import com.aps.figures.InterfaceEmptyFigure;
+import com.aps.figures.InterfaceFigure;
+import com.aps.figures.InterfaceFullFigure;
 
 public class InterfaceInterfaceConnection extends LineConnection {
 	/*
@@ -38,10 +39,11 @@ public class InterfaceInterfaceConnection extends LineConnection {
 			slot = (InterfaceEmptyFigure) start;
 		}
 
-		slot.dbInterfejsModel.setProvider(provider.dbInterfejsModel);
-		provider.dbInterfejsModel.getSoketi().add(slot.dbInterfejsModel);
-
-		//
+		Interfejs prov = slot.dbInterfejsModel.getProvider();
+		if (prov == null || !prov.equals(provider.dbInterfejsModel)) {
+			slot.dbInterfejsModel.setProvider(provider.dbInterfejsModel);
+			provider.dbInterfejsModel.getSoketi().add(slot.dbInterfejsModel);
+		}
 
 		// ADDING ALL DEPENDECES
 		slot.connectedInterfaces.add(provider);

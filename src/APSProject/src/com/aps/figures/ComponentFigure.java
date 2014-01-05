@@ -138,6 +138,16 @@ public class ComponentFigure extends GroupFigure {
 		updateDBModel();
 	}
 
+	@Override
+	public void figureChanged(FigureChangeEvent e) {
+		update(e);
+	}
+
+	@Override
+	public void figureRemoved(FigureChangeEvent e) {
+		update(e);
+	}
+
 	private void updateDBModel() {
 		dbKomponenta.setDekoracija(dekoracija);
 		dbKomponenta.setHeight(displayBox().height);
@@ -212,18 +222,8 @@ public class ComponentFigure extends GroupFigure {
 	}
 
 	public void update(FigureChangeEvent e) {
-
 		layout();
 		changed();
-	}
-
-	public void figureChanged(FigureChangeEvent e) {
-		update(e);
-
-	}
-
-	public void figureRemoved(FigureChangeEvent e) {
-		update(e);
 	}
 
 	@Override
