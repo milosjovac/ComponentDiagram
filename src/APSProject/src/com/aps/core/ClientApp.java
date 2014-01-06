@@ -195,7 +195,7 @@ public class ClientApp extends DrawApplication {
 	protected void addListeners() {
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent event) {
-			//	savingThread.interrupt();
+				// savingThread.interrupt();
 				dispose();
 				server.clientDisposed(dijagram, ClientApp.this);
 			}
