@@ -14,6 +14,8 @@ import java.util.ArrayList;
 
 import javax.swing.JOptionPane;
 
+import org.hibernate.Session;
+
 import CH.ifa.draw.application.DrawApplication;
 import CH.ifa.draw.figures.TextFigure;
 import CH.ifa.draw.figures.TextTool;
@@ -21,12 +23,14 @@ import CH.ifa.draw.framework.Drawing;
 import CH.ifa.draw.framework.DrawingChangeEvent;
 import CH.ifa.draw.framework.DrawingChangeListener;
 import CH.ifa.draw.framework.Figure;
+import CH.ifa.draw.framework.FigureChangeEvent;
 import CH.ifa.draw.framework.FigureEnumeration;
 import CH.ifa.draw.framework.Tool;
 import CH.ifa.draw.standard.ActionTool;
 import CH.ifa.draw.standard.ConnectionTool;
 import CH.ifa.draw.standard.CreationTool;
 import CH.ifa.draw.standard.DecoratorFigure;
+import CH.ifa.draw.standard.FigureEnumerator;
 import CH.ifa.draw.standard.StandardDrawing;
 import CH.ifa.draw.standard.ToolButton;
 import CH.ifa.draw.util.Geom;
@@ -60,6 +64,12 @@ public class ClientApp extends DrawApplication {
 	public static boolean dirty = false;
 	boolean savingInProcess = false;
 
+	public void setDijagram(Dijagram d) {
+		int tmpHash = this.dijagram.getHashID();
+		this.dijagram = d;
+		this.dijagram.setHashID(tmpHash);
+	}
+
 	public ClientApp(MainWindow server, String title, MainWindow mainWindow, Dijagram dijagram,
 			String clientName) {
 		super(title + " - " + clientName);
@@ -76,7 +86,7 @@ public class ClientApp extends DrawApplication {
 
 			@Override
 			public void run() {
-				while (!savingThread.isInterrupted()) {
+				while ((!Thread.currentThread().isInterrupted())) {
 					if (dirty && wPermission) {
 						if (saveToDB())
 							updateObservers(dijagram);
@@ -150,7 +160,7 @@ public class ClientApp extends DrawApplication {
 		mi = new MenuItem("Delete", new MenuShortcut('d'));
 		mi.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
-				// deleteAll();
+				// createDrawingFromDB(drawing());
 			}
 		});
 		menu.add(mi);
@@ -180,11 +190,15 @@ public class ClientApp extends DrawApplication {
 	public void reloadDrawing() {
 		System.out.println("updated as shit");
 		FigureEnumeration figures = drawing().figures();
+		ArrayList<Figure> forDelete = new ArrayList<Figure>();
 		while (figures.hasMoreElements()) {
 			Figure fig = figures.nextFigure();
-			drawing().remove(fig);
+			forDelete.add(fig);
 		}
-		dijagram.getKomponente().clear();
+		for (Figure f : forDelete) {
+			drawing().remove(f);
+		}
+		// dijagram.getKomponente().clear();
 
 		loadFromDB();
 
@@ -195,9 +209,10 @@ public class ClientApp extends DrawApplication {
 	protected void addListeners() {
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent event) {
+
 				// savingThread.interrupt();
-				dispose();
 				server.clientDisposed(dijagram, ClientApp.this);
+				dispose();
 			}
 		});
 	}
@@ -218,7 +233,8 @@ public class ClientApp extends DrawApplication {
 	}
 
 	private void loadFromDB() {
-		ORMManager.getManager().loadDiagramTree(dijagram);
+		// ORMManager.getManager().loadDiagramTree(dijagram);
+		ORMManager.getManager().loadDiagramTree(dijagram, this);
 	}
 
 	/**
@@ -234,6 +250,7 @@ public class ClientApp extends DrawApplication {
 
 			@Override
 			public void drawingRequestUpdate(DrawingChangeEvent e) {
+				dirty = true;
 			}
 
 			@Override
@@ -251,59 +268,85 @@ public class ClientApp extends DrawApplication {
 		System.out.println(clientName + " : " + dijagram.hashCode());
 
 		// KREIRANJE SVIH KOMPONENTI I NJIOVIH INTERFEJSA
-		for (Komponenta komponenta : dijagram.getKomponente()) {
-			Figure figK = ComponentFigure.createComponent(komponenta);
-			drawing.add(figK);
+		// KREIRATI SAMO ONE KOJE VEC NE POSTOJE NA CRTEZU
+		ORMManager ormManager = ORMManager.getManager();
+		try {
+			ormManager.createSession();
+			ormManager.session.beginTransaction();
 
-			for (Interfejs interfejs : komponenta.getInterfejsi()) {
+			for (Komponenta komponenta : dijagram.getKomponente()) {
 
-				InterfaceFigure figI = InterfaceFigure.createInterface(interfejs, figK);
-				drawing.add(figI);
+				Figure figK = ComponentFigure.createComponent(komponenta);
+				drawing.add(figK);
 
-				if (figI instanceof InterfaceEmptyFigure)
-					socets.add(figI);
-				else if (figI instanceof InterfaceFullFigure)
-					providers.add(figI);
+				for (Interfejs interfejs : komponenta.getInterfejsi()) {
 
-				// CRTANJE VEZE OD KOMPONENTE ZA INTERFEJSIMA
-				ComponentInterfaceConnection veza = new ComponentInterfaceConnection();
+					InterfaceFigure figI = InterfaceFigure.createInterface(interfejs, figK);
+					drawing.add(figI);
 
-				if (veza.canConnect(figK, figI)) {
+					if (figI instanceof InterfaceEmptyFigure)
+						socets.add(figI);
+					else if (figI instanceof InterfaceFullFigure)
+						providers.add(figI);
 
-					Point startPoint = Geom.center(figK.displayBox());
-					veza.startPoint(startPoint.x, startPoint.y);
-					veza.connectStart(figK.connectorAt(figK.displayBox().x, figK.displayBox().y));
-					Point endPoint = Geom.center(figI.displayBox());
-					veza.endPoint(endPoint.x, endPoint.y);
-					veza.connectEnd(figI.connectorAt(figI.displayBox().x, figI.displayBox().y));
-					veza.updateConnection();
+					// CRTANJE VEZE OD KOMPONENTE ZA INTERFEJSIMA
+					ComponentInterfaceConnection veza = new ComponentInterfaceConnection();
 
-					drawing.add(veza);
-				}
-			}
-		}
+					if (veza.canConnect(figK, figI)) {
 
-		// KREIRANJE VEZA IZMEDJU INTERFEJSA
-		for (InterfaceFigure provider : providers)
-			for (Interfejs soketModel : provider.dbInterfejsModel.getSoketi())
-				for (InterfaceFigure soket : socets)
-					if (soket.dbInterfejsModel.equals(soketModel)) {
-						// pravimo vezu
-						// CRTANJE VEZE OD INT KA INTERFEJSIMA
-						InterfaceInterfaceConnection veza = new InterfaceInterfaceConnection();
-
-						Point startPoint = Geom.center(soket.displayBox());
+						Point startPoint = Geom.center(figK.displayBox());
 						veza.startPoint(startPoint.x, startPoint.y);
-						veza.connectStart(soket.connectorAt(soket.displayBox().x, soket.displayBox().y));
-
-						Point endPoint = Geom.center(provider.displayBox());
+						veza.connectStart(figK.connectorAt(figK.displayBox().x, figK.displayBox().y));
+						Point endPoint = Geom.center(figI.displayBox());
 						veza.endPoint(endPoint.x, endPoint.y);
-						veza.connectEnd(provider.connectorAt(provider.displayBox().x, provider.displayBox().y));
+						veza.connectEnd(figI.connectorAt(figI.displayBox().x, figI.displayBox().y));
 						veza.updateConnection();
 
 						drawing.add(veza);
-
 					}
+				}
+			}
+
+			// KREIRANJE VEZA IZMEDJU INTERFEJSA
+
+			for (InterfaceFigure provider : providers)
+				for (Interfejs soketModel : provider.dbInterfejsModel.getSoketi())
+					for (InterfaceFigure soket : socets)
+						if (soket.dbInterfejsModel.equals(soketModel)) {
+							// pravimo vezu
+							// CRTANJE VEZE OD INT KA INTERFEJSIMA
+							InterfaceInterfaceConnection veza = new InterfaceInterfaceConnection();
+
+							Point startPoint = Geom.center(soket.displayBox());
+							veza.startPoint(startPoint.x, startPoint.y);
+							veza.connectStart(soket.connectorAt(soket.displayBox().x, soket.displayBox().y));
+
+							Point endPoint = Geom.center(provider.displayBox());
+							veza.endPoint(endPoint.x, endPoint.y);
+							veza.connectEnd(provider.connectorAt(provider.displayBox().x,
+									provider.displayBox().y));
+							veza.updateConnection();
+
+							drawing.add(veza);
+
+						}
+
+			FigureEnumerator fe = (FigureEnumerator) drawing.figures();
+			while (fe.hasMoreElements()) {
+				Figure f = fe.nextFigure();
+				drawing.figureRequestUpdate(new FigureChangeEvent(f));
+			}
+
+			// this.invalidate();
+			ormManager.session.getTransaction().commit();
+
+		} catch (RuntimeException e) {
+			System.out.println(e);
+			ormManager.session.getTransaction().rollback();
+			throw e;
+		} finally {
+			ormManager.closeSession();
+		}
 
 	}
 

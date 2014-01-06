@@ -17,17 +17,16 @@ public class ORMManager {
 	private SessionFactory sessionFactory;
 	private org.hibernate.service.ServiceRegistry serviceRegistry;
 	private static ORMManager manager = null;
-	Session session;
+	public Session session;
 
 	private ORMManager() {
 		Configuration configuration = new Configuration();
 		configuration.configure();
-		serviceRegistry = new ServiceRegistryBuilder().applySettings(configuration.getProperties())
-				.buildServiceRegistry();
+		serviceRegistry = new ServiceRegistryBuilder().applySettings(
+				configuration.getProperties()).buildServiceRegistry();
 		sessionFactory = configuration.buildSessionFactory(serviceRegistry);
 		createSession();
 	}
-
 	public static ORMManager getManager() {
 		if (manager == null)
 			manager = new ORMManager();
@@ -67,24 +66,33 @@ public class ORMManager {
 	public boolean saveDiagram(Dijagram dijagram) {
 		boolean result = false;
 		try {
+			createSession();
 			session.beginTransaction();
 
-			session.save(dijagram);
+			session.saveOrUpdate(dijagram);
+
+			// session.save(dijagram);
 
 			for (Komponenta komponenta : dijagram.getKomponente()) {
-				session.save(komponenta);
+				session.saveOrUpdate(komponenta);
+
 				for (Interfejs interfesjs : komponenta.getInterfejsi()) {
-					session.save(interfesjs);
+					session.saveOrUpdate(interfesjs);
+
 				}
 			}
 
-			session.getTransaction().commit();
 			session.flush();
+			session.clear();
+
+			session.getTransaction().commit();
 
 		} catch (RuntimeException e) {
 			System.out.println(e);
 			session.getTransaction().rollback();
 			throw e;
+		} finally {
+			session.close();
 		}
 
 		return true;
@@ -98,17 +106,33 @@ public class ORMManager {
 		session.close();
 	}
 
-	public void loadDiagramTree(Dijagram dijagram) {
+	public void loadDiagramTree(Dijagram dijagram, ClientApp ca) {
 		try {
+			createSession();
 			session.beginTransaction();
-			session.evict(dijagram);
-		
+			
+			int id = dijagram.getId();
+			if (id != 0)
+				dijagram =  (Dijagram) session.get(Dijagram.class, id);
+			 
+			// session.evict(dijagram);
+			//Query query = session
+			//		.createQuery("from Komponenta where DIAGRAM_ID = :code ");
+			//query.setParameter("code", dijagram.getId());
+			
+			//List<Komponenta> listaKomponenti = query.list();
+			List<Komponenta> listaKomponenti= null;
+			if (dijagram != null)
+				listaKomponenti = (List<Komponenta>) dijagram.getKomponente();
+			if (listaKomponenti.size() != 0) {
 
-			for (Komponenta k : dijagram.getKomponente()) {
+				for (Komponenta k : listaKomponenti) {
 
-				k.getInterfejsi();
-				for (Interfejs inter : k.getInterfejsi())
-					inter.getSoketi();
+					k.getInterfejsi();
+					for (Interfejs inter : k.getInterfejsi())
+						inter.getSoketi();
+				}
+				ca.setDijagram(dijagram);
 			}
 			session.getTransaction().commit();
 
@@ -116,6 +140,8 @@ public class ORMManager {
 			System.out.println(e);
 			session.getTransaction().rollback();
 			throw e;
+		} finally {
+			session.close();
 		}
 	}
 }
