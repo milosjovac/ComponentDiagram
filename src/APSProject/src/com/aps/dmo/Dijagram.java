@@ -6,6 +6,7 @@ import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
@@ -22,6 +23,9 @@ public class Dijagram implements java.io.Serializable {
 	@Column(name = "DIAGRAM_ID")
 	private int id;
 
+	@Transient
+	private int hashID;
+
 	@OneToMany(mappedBy = "dijagram")
 	private Collection<Komponenta> komponente = new ArrayList<Komponenta>();
 	@Column(name = "NAME")
@@ -35,6 +39,14 @@ public class Dijagram implements java.io.Serializable {
 
 	public void setId(int id) {
 		this.id = id;
+	}
+
+	public int getHashID() {
+		return hashID;
+	}
+
+	public void setHashID(int hashID) {
+		this.hashID = hashID;
 	}
 
 	public Collection<Komponenta> getKomponente() {

@@ -27,7 +27,9 @@ public class MainWindow {
 	DefaultTableModel model = new DefaultTableModel();
 	JTable table = new JTable(model);
 
-	private HashMap<Dijagram, ArrayList<ClientApp>> statistika = new HashMap<>();
+	int hashId = 0;
+
+	private HashMap<Integer, ArrayList<ClientApp>> statistika = new HashMap<>();
 
 	private Collection<ClientApp> clientWindows = new ArrayList<ClientApp>();
 
@@ -60,11 +62,11 @@ public class MainWindow {
 	 */
 	public void updateObservers(Dijagram dijagram) {
 
-		ArrayList<ClientApp> observeri = statistika.get(dijagram);
+		ArrayList<ClientApp> observeri = statistika.get(dijagram.getHashID());
 		// Brisemo prvi jer je on onaj koji menja crtez
 		for (int i = 1; i < observeri.size(); i++) {
 			ClientApp ca = observeri.get(i);
-			//ca.setDijagram(dijagram);
+			// ca.setDijagram(dijagram);
 			ca.reloadDrawing();
 		}
 
@@ -89,7 +91,8 @@ public class MainWindow {
 		final JComboBox<String> comboBox = new JComboBox<String>();
 
 		comboBox.addItem("New");
-		cashedDiagrams = (ArrayList<Dijagram>) ORMManager.getManager().getAllDiagrams();
+		cashedDiagrams = (ArrayList<Dijagram>) ORMManager.getManager()
+				.getAllDiagrams();
 		for (Dijagram d : cashedDiagrams) {
 			comboBox.addItem(d.getIme());
 		}
@@ -110,14 +113,15 @@ public class MainWindow {
 				if (comboBox.getSelectedIndex() == 0) {
 
 					// uzmi ime novog dijagrama
-					String name = JOptionPane.showInputDialog(null, "Choose the diagram name", "Name",
+					String name = JOptionPane.showInputDialog(null,
+							"Choose the diagram name", "Name",
 							JOptionPane.WARNING_MESSAGE);
 
 					if (name == null)
 						return;
 
-					// Sacuvaj model u bazu
 					dijagram = new Dijagram();
+					dijagram.setHashID(hashId++);
 					dijagram.setDate(new Date());
 					dijagram.setIme(name);
 					cashedDiagrams.add(dijagram);
@@ -126,28 +130,28 @@ public class MainWindow {
 					comboBox.addItem(dijagram.getIme());
 					comboBox.updateUI();
 
-					client = new ClientApp(MainWindow.this, name, MainWindow.this, dijagram, "C"
-							+ clientCounter++);
+					client = new ClientApp(MainWindow.this, name,
+							MainWindow.this, dijagram, "C" + clientCounter++);
 					client.open();
 
 					// DIAGRAM IS LOADED FROM DATABASE
 				} else {
 					dijagram = cashedDiagrams.get(comboBox.getSelectedIndex() - 1);
-					client = new ClientApp(MainWindow.this, dijagram.getIme(), MainWindow.this, dijagram, "C"
-							+ clientCounter++);
+					client = new ClientApp(MainWindow.this, dijagram.getIme(),
+							MainWindow.this, dijagram, "C" + clientCounter++);
 					client.open();
 				}
 
 				dijagramiAktivni.add(dijagram);
 
-				if (statistika.get(dijagram) == null) {
+				if (statistika.get(dijagram.getHashID()) == null) {
 					ArrayList<ClientApp> q = new ArrayList<ClientApp>();
 					q.add(client);
-					statistika.put(dijagram, q);
+					statistika.put(dijagram.getHashID(), q);
 				} else {
-					statistika.get(dijagram).add(client);
+					statistika.get(dijagram.getHashID()).add(client);
 				}
-				if (statistika.get(dijagram).size() == 1)
+				if (statistika.get(dijagram.getHashID()).size() == 1)
 					client.setwPermission(true);
 				else
 					client.setwPermission(false);
@@ -169,14 +173,21 @@ public class MainWindow {
 
 	public void refreshTableStat() {
 		model.setRowCount(0);
-		for (Dijagram d : statistika.keySet()) {
+		for (int d : statistika.keySet()) {
 			String queue = "";
 			for (ClientApp cap : statistika.get(d))
 				queue += cap.clientName + " <- ";
 
 			if (queue.length() > 0)
 				queue = queue.substring(0, queue.length() - 4);
-			model.addRow(new Object[] { d.getIme(), "[ " + queue + " ]" });
+			Dijagram tmpDijagram = null;
+			for (Dijagram dijagram : cashedDiagrams) {
+				if (dijagram.getHashID() == d)
+					tmpDijagram = dijagram;
+				break;
+			}
+			model.addRow(new Object[] { tmpDijagram.getIme(),
+					"[ " + queue + " ]" });
 		}
 
 		table.updateUI();
@@ -184,11 +195,11 @@ public class MainWindow {
 
 	public void clientDisposed(Dijagram d, ClientApp client) {
 
-		statistika.get(d).remove(client);
-		if (statistika.get(d).size() > 0)
-			statistika.get(d).get(0).setwPermission(true);
+		statistika.get(d.getHashID()).remove(client);
+		if (statistika.get(d.getHashID()).size() > 0)
+			statistika.get(d.getHashID()).get(0).setwPermission(true);
 		else
-			statistika.remove(d);
+			statistika.remove(d.getHashID());
 		refreshTableStat();
 	}
 }

@@ -6,6 +6,7 @@ import java.util.Collection;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -46,7 +47,7 @@ public class Interfejs implements java.io.Serializable {
 	@JoinColumn(name="PROVIDER_ID")
 	private Interfejs provider;
 
-	@OneToMany
+	@OneToMany(fetch= FetchType.EAGER)
 	@JoinTable(name = "INTERFACE_DEPENDECY", joinColumns = @JoinColumn(name = "PROVIDER_ID"), inverseJoinColumns = @JoinColumn(name = "SLOT_ID"))
 	private Collection<Interfejs> soketi = new ArrayList<Interfejs>();
 
