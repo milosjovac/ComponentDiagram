@@ -61,8 +61,6 @@ public class ClientApp extends DrawApplication {
 	MainWindow server;
 
 	Thread savingThread;
-	public static boolean dirty = false;
-	boolean savingInProcess = false;
 
 	public void setDijagram(Dijagram d) {
 		int tmpHash = this.dijagram.getHashID();
@@ -78,21 +76,23 @@ public class ClientApp extends DrawApplication {
 		this.dijagram = dijagram;
 		System.out.println(clientName + " : " + dijagram.hashCode());
 		loadFromDB();
-		// startSavingProcess();
 	}
 
 	private void startSavingProcess() {
+
+		if (!wPermission)
+			return;
+
+		if (savingThread != null && savingThread.isAlive())
+			return;
+
 		savingThread = new Thread(new Runnable() {
 
 			@Override
 			public void run() {
-				while ((!Thread.currentThread().isInterrupted())) {
-					if (dirty && wPermission) {
-						if (saveToDB())
-							updateObservers(dijagram);
-						dirty = false;
-					}
-				}
+				if (saveToDB())
+					updateObservers(dijagram);
+				System.out.println("saved_to_DB");
 			}
 		});
 		savingThread.start();
@@ -188,7 +188,6 @@ public class ClientApp extends DrawApplication {
 	}
 
 	public void reloadDrawing() {
-		System.out.println("updated as shit");
 		FigureEnumeration figures = drawing().figures();
 		ArrayList<Figure> forDelete = new ArrayList<Figure>();
 		while (figures.hasMoreElements()) {
@@ -250,12 +249,12 @@ public class ClientApp extends DrawApplication {
 
 			@Override
 			public void drawingRequestUpdate(DrawingChangeEvent e) {
-				dirty = true;
+				startSavingProcess();
 			}
 
 			@Override
 			public void drawingInvalidated(DrawingChangeEvent e) {
-				dirty = true;
+				startSavingProcess();
 			}
 		});
 		return drawing;
@@ -264,8 +263,6 @@ public class ClientApp extends DrawApplication {
 	private void createDrawingFromDB(Drawing drawing) {
 		ArrayList<InterfaceFigure> providers = new ArrayList<>();
 		ArrayList<InterfaceFigure> socets = new ArrayList<>();
-
-		System.out.println(clientName + " : " + dijagram.hashCode());
 
 		// KREIRANJE SVIH KOMPONENTI I NJIOVIH INTERFEJSA
 		// KREIRATI SAMO ONE KOJE VEC NE POSTOJE NA CRTEZU
@@ -350,7 +347,7 @@ public class ClientApp extends DrawApplication {
 
 	}
 
-	public boolean saveToDB() {
+	public synchronized boolean saveToDB() {
 		boolean canSave = true;
 		FigureEnumeration figures = drawing().figures();
 
