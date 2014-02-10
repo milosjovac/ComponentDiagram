@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
@@ -26,7 +27,7 @@ public class Dijagram implements java.io.Serializable {
 	@Transient
 	private int hashID;
 
-	@OneToMany(mappedBy = "dijagram")
+	@OneToMany(mappedBy = "dijagram", orphanRemoval = true, cascade = { CascadeType.ALL })
 	private Collection<Komponenta> komponente = new ArrayList<Komponenta>();
 	@Column(name = "NAME")
 	private String ime;

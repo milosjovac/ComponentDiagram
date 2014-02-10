@@ -187,4 +187,6 @@ public class StandardDrawing extends CompositeFigure implements Drawing {
 
         fListeners = new Vector(2);
     }
+    
+    
 }

@@ -2,19 +2,20 @@ package com.aps.core;
 
 import java.awt.Color;
 import java.awt.Menu;
+import java.awt.MenuBar;
 import java.awt.MenuItem;
 import java.awt.MenuShortcut;
 import java.awt.Panel;
 import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 
+import javax.swing.JFrame;
 import javax.swing.JOptionPane;
-
-import org.hibernate.Session;
 
 import CH.ifa.draw.application.DrawApplication;
 import CH.ifa.draw.figures.TextFigure;
@@ -22,6 +23,7 @@ import CH.ifa.draw.figures.TextTool;
 import CH.ifa.draw.framework.Drawing;
 import CH.ifa.draw.framework.DrawingChangeEvent;
 import CH.ifa.draw.framework.DrawingChangeListener;
+import CH.ifa.draw.framework.DrawingView;
 import CH.ifa.draw.framework.Figure;
 import CH.ifa.draw.framework.FigureChangeEvent;
 import CH.ifa.draw.framework.FigureEnumeration;
@@ -31,7 +33,9 @@ import CH.ifa.draw.standard.ConnectionTool;
 import CH.ifa.draw.standard.CreationTool;
 import CH.ifa.draw.standard.DecoratorFigure;
 import CH.ifa.draw.standard.FigureEnumerator;
+import CH.ifa.draw.standard.SelectionTool;
 import CH.ifa.draw.standard.StandardDrawing;
+import CH.ifa.draw.standard.TextHolder;
 import CH.ifa.draw.standard.ToolButton;
 import CH.ifa.draw.util.Geom;
 
@@ -61,6 +65,7 @@ public class ClientApp extends DrawApplication {
 	MainWindow server;
 
 	Thread savingThread;
+	Panel panel;
 
 	public void setDijagram(Dijagram d) {
 		int tmpHash = this.dijagram.getHashID();
@@ -105,9 +110,11 @@ public class ClientApp extends DrawApplication {
 	protected void createTools(Panel panel) {
 		super.createTools(panel);
 
+		this.panel = panel;
+
 		Tool tool;
 
-		tool = new TextTool(view(), new TextFigure());
+		tool = createTextTool();
 		panel.add(createToolButton(IMAGES + "TEXT", "Text Tool", tool));
 
 		tool = new CreationTool(view(), new StereotipDecorator(new ComponentFigure(dijagram.getIme()),
@@ -135,6 +142,46 @@ public class ClientApp extends DrawApplication {
 		tool = new ConnectionTool(view(), new InterfaceInterfaceConnection());
 		panel.add(createToolButton(DIAGRAM_IMAGES + "INT_CONN", "Interface Connector Tool", tool));
 
+		tool.deactivate();
+
+	}
+
+	@Override
+	protected Tool createSelectionTool() {
+		return new SelectionTool(view()) {
+			@Override
+			public void mouseDown(MouseEvent e, int x, int y) {
+				if (wPermission)
+					super.mouseDown(e, x, y);
+				else {
+					return;
+				}
+			}
+		};
+	}
+
+	private Tool createTextTool() {
+		return new TextTool(view(), new TextFigure()) {
+			@Override
+			public void mouseDown(MouseEvent e, int x, int y) {
+				Figure pressedFigure;
+				TextHolder textHolder = null;
+
+				pressedFigure = drawing().findFigureInside(x, y);
+
+				if (pressedFigure instanceof TextHolder) {
+					textHolder = (TextHolder) pressedFigure;
+					if (!textHolder.acceptsTyping())
+						textHolder = null;
+				}
+				if (textHolder != null) {
+					beginEdit(textHolder);
+					return;
+				} else {
+					endEdit();
+				}
+			}
+		};
 	}
 
 	@Override
@@ -147,44 +194,19 @@ public class ClientApp extends DrawApplication {
 
 	protected Menu createFileMenu() {
 
-		Menu menu = new Menu("File");
+		Menu menu = new Menu("Diagrams");
 
-		MenuItem mi = new MenuItem("Save", new MenuShortcut('s'));
-		mi.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-				promptSaveAs();
-			}
-		});
-		menu.add(mi);
-
-		mi = new MenuItem("Delete", new MenuShortcut('d'));
-		mi.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-				// createDrawingFromDB(drawing());
-			}
-		});
-		menu.add(mi);
-
-		menu.add(mi);
-		menu.addSeparator();
-		mi = new MenuItem("Print...", new MenuShortcut('p'));
-		mi.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-				print();
-			}
-		});
-		menu.add(mi);
-		menu.addSeparator();
-		mi = new MenuItem("Exit");
-		mi.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-				savingThread.interrupt();
-				dispose();
-				server.clientDisposed(dijagram, ClientApp.this);
-			}
-		});
-		menu.add(mi);
 		return menu;
+	}
+
+	@Override
+	public void selectionChanged(DrawingView view) {
+		return;
+	}
+
+	@Override
+	protected void createMenus(MenuBar mb) {
+		createFileMenu();
 	}
 
 	public void reloadDrawing() {
@@ -224,9 +246,14 @@ public class ClientApp extends DrawApplication {
 		if (wPermission && !this.wPermission) {
 			JOptionPane.showMessageDialog(ClientApp.this, "Write permission granted", "Permission",
 					JOptionPane.INFORMATION_MESSAGE);
+			this.view().setBackground(Color.WHITE);
+			panel.setEnabled(true);
 		} else if (!wPermission && !this.wPermission) {
 			JOptionPane.showMessageDialog(ClientApp.this, "Read permission granted", "Permission",
 					JOptionPane.INFORMATION_MESSAGE);
+			this.view().setBackground(Color.LIGHT_GRAY);
+			panel.setEnabled(false);
+
 		}
 		this.wPermission = wPermission;
 	}
@@ -255,8 +282,10 @@ public class ClientApp extends DrawApplication {
 			@Override
 			public void drawingInvalidated(DrawingChangeEvent e) {
 				startSavingProcess();
+
 			}
 		});
+
 		return drawing;
 	}
 

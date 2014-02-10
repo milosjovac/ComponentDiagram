@@ -14,6 +14,7 @@ import CH.ifa.draw.figures.GroupFigure;
 import CH.ifa.draw.figures.TextFigure;
 import CH.ifa.draw.framework.Figure;
 import CH.ifa.draw.framework.FigureChangeEvent;
+import CH.ifa.draw.framework.FigureChangeListener;
 import CH.ifa.draw.framework.FigureEnumeration;
 import CH.ifa.draw.framework.Handle;
 import CH.ifa.draw.standard.BoxHandleKit;
@@ -22,6 +23,7 @@ import CH.ifa.draw.standard.RelativeLocator;
 
 import com.aps.connections.ComponentInterfaceConnection;
 import com.aps.core.MainWindow;
+import com.aps.core.ORMManager;
 import com.aps.dmo.Dijagram;
 import com.aps.dmo.Komponenta;
 
@@ -145,6 +147,8 @@ public class ComponentFigure extends GroupFigure {
 
 	@Override
 	public void figureRemoved(FigureChangeEvent e) {
+
+		dbKomponenta.getDijagram().getKomponente().remove(dbKomponenta);
 		update(e);
 	}
 

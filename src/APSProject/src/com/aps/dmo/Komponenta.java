@@ -3,9 +3,9 @@ package com.aps.dmo;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
@@ -58,7 +58,7 @@ public class Komponenta implements java.io.Serializable {
 	@JoinColumn(name = "DIAGRAM_ID")
 	private Dijagram dijagram;
 
-	@OneToMany(mappedBy = "komponenta")
+	@OneToMany(mappedBy = "komponenta", orphanRemoval = true, cascade = { CascadeType.ALL })
 	private Collection<Interfejs> interfejsi = new ArrayList<Interfejs>();
 
 	public Komponenta(Figure fig, Dijagram dijagram, ArrayList<Interfejs> modelInterfejsi) {

@@ -91,9 +91,9 @@ public class MainWindow {
 		final JComboBox<String> comboBox = new JComboBox<String>();
 
 		comboBox.addItem("New");
-		cashedDiagrams = (ArrayList<Dijagram>) ORMManager.getManager()
-				.getAllDiagrams();
+		cashedDiagrams = (ArrayList<Dijagram>) ORMManager.getManager().getAllDiagrams();
 		for (Dijagram d : cashedDiagrams) {
+			d.setHashID(hashId++);
 			comboBox.addItem(d.getIme());
 		}
 
@@ -113,8 +113,7 @@ public class MainWindow {
 				if (comboBox.getSelectedIndex() == 0) {
 
 					// uzmi ime novog dijagrama
-					String name = JOptionPane.showInputDialog(null,
-							"Choose the diagram name", "Name",
+					String name = JOptionPane.showInputDialog(null, "Choose the diagram name", "Name",
 							JOptionPane.WARNING_MESSAGE);
 
 					if (name == null)
@@ -130,15 +129,15 @@ public class MainWindow {
 					comboBox.addItem(dijagram.getIme());
 					comboBox.updateUI();
 
-					client = new ClientApp(MainWindow.this, name,
-							MainWindow.this, dijagram, "C" + clientCounter++);
+					client = new ClientApp(MainWindow.this, name, MainWindow.this, dijagram, "C"
+							+ clientCounter++);
 					client.open();
 
 					// DIAGRAM IS LOADED FROM DATABASE
 				} else {
 					dijagram = cashedDiagrams.get(comboBox.getSelectedIndex() - 1);
-					client = new ClientApp(MainWindow.this, dijagram.getIme(),
-							MainWindow.this, dijagram, "C" + clientCounter++);
+					client = new ClientApp(MainWindow.this, dijagram.getIme(), MainWindow.this, dijagram, "C"
+							+ clientCounter++);
 					client.open();
 				}
 
@@ -182,12 +181,12 @@ public class MainWindow {
 				queue = queue.substring(0, queue.length() - 4);
 			Dijagram tmpDijagram = null;
 			for (Dijagram dijagram : cashedDiagrams) {
-				if (dijagram.getHashID() == d)
+				if (dijagram.getHashID() == d) {
 					tmpDijagram = dijagram;
-				break;
+					break;
+				}
 			}
-			model.addRow(new Object[] { tmpDijagram.getIme(),
-					"[ " + queue + " ]" });
+			model.addRow(new Object[] { tmpDijagram.getIme(), "[ " + queue + " ]" });
 		}
 
 		table.updateUI();

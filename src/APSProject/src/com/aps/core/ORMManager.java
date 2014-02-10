@@ -1,16 +1,20 @@
 package com.aps.core;
 
+import java.awt.Component;
 import java.util.List;
+import java.util.Map;
 
 import org.hibernate.Query;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.metadata.ClassMetadata;
 import org.hibernate.service.ServiceRegistryBuilder;
 
 import com.aps.dmo.Dijagram;
 import com.aps.dmo.Komponenta;
 import com.aps.dmo.Interfejs;
+import com.aps.figures.ComponentFigure;
 
 public class ORMManager {
 
@@ -22,12 +26,13 @@ public class ORMManager {
 	private ORMManager() {
 		Configuration configuration = new Configuration();
 		configuration.configure();
-		serviceRegistry = new ServiceRegistryBuilder().applySettings(
-				configuration.getProperties()).buildServiceRegistry();
+		serviceRegistry = new ServiceRegistryBuilder().applySettings(configuration.getProperties())
+				.buildServiceRegistry();
 		sessionFactory = configuration.buildSessionFactory(serviceRegistry);
 		createSession();
 	}
-	public static ORMManager getManager() {
+
+	public synchronized static ORMManager getManager() {
 		if (manager == null)
 			manager = new ORMManager();
 		return manager;
@@ -64,7 +69,8 @@ public class ORMManager {
 	}
 
 	public boolean saveDiagram(Dijagram dijagram) {
-		boolean result = false;
+
+		evict2ndLevelCache();
 		try {
 			createSession();
 			session.beginTransaction();
@@ -110,18 +116,18 @@ public class ORMManager {
 		try {
 			createSession();
 			session.beginTransaction();
-			
+
 			int id = dijagram.getId();
 			if (id != 0)
-				dijagram =  (Dijagram) session.get(Dijagram.class, id);
-			 
+				dijagram = (Dijagram) session.get(Dijagram.class, id);
+
 			// session.evict(dijagram);
-			//Query query = session
-			//		.createQuery("from Komponenta where DIAGRAM_ID = :code ");
-			//query.setParameter("code", dijagram.getId());
-			
-			//List<Komponenta> listaKomponenti = query.list();
-			List<Komponenta> listaKomponenti= null;
+			// Query query = session
+			// .createQuery("from Komponenta where DIAGRAM_ID = :code ");
+			// query.setParameter("code", dijagram.getId());
+
+			// List<Komponenta> listaKomponenti = query.list();
+			List<Komponenta> listaKomponenti = null;
 			if (dijagram != null)
 				listaKomponenti = (List<Komponenta>) dijagram.getKomponente();
 			if (listaKomponenti.size() != 0) {
@@ -141,7 +147,44 @@ public class ORMManager {
 			session.getTransaction().rollback();
 			throw e;
 		} finally {
+			if (session.isOpen())
+				session.close();
+		}
+	}
+
+	public void deleteDijagram(Dijagram o) {
+		try {
+			createSession();
+			session.beginTransaction();
+
+			session.delete(o);
+			session.flush();
+			session.clear();
+			session.getTransaction().commit();
+
+			sessionFactory.getCache().evictEntityRegions();
+			sessionFactory.getCache().evictCollectionRegions();
+			sessionFactory.getCache().evictDefaultQueryRegion();
+			sessionFactory.getCache().evictQueryRegions();
+
+		} catch (RuntimeException e) {
+			System.out.println(e);
+			session.getTransaction().rollback();
+			throw e;
+		} finally {
 			session.close();
+		}
+	}
+
+	public void evict2ndLevelCache() {
+		try {
+			Map<String, ClassMetadata> classesMetadata = sessionFactory.getAllClassMetadata();
+			for (String entityName : classesMetadata.keySet()) {
+
+				sessionFactory.evictEntity(entityName);
+			}
+		} catch (Exception e) {
+
 		}
 	}
 }
