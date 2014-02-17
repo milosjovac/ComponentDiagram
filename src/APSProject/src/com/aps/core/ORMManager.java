@@ -98,7 +98,8 @@ public class ORMManager {
 			session.getTransaction().rollback();
 			throw e;
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 
 		return true;
@@ -118,8 +119,10 @@ public class ORMManager {
 			session.beginTransaction();
 
 			int id = dijagram.getId();
-			if (id != 0)
+			if (id != 0){
 				dijagram = (Dijagram) session.get(Dijagram.class, id);
+				
+			}
 
 			// session.evict(dijagram);
 			// Query query = session
@@ -172,7 +175,8 @@ public class ORMManager {
 			session.getTransaction().rollback();
 			throw e;
 		} finally {
-			session.close();
+			if (session.isOpen())
+				session.close();
 		}
 	}
 
